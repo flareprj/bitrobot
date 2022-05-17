@@ -45,6 +45,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
+        self.timer = None
+        self.trailing_stop = None
         self.POC = None
         self.price = None
         self.zone_25 = None
@@ -95,10 +97,12 @@ class MainWindow(QMainWindow):
 
         self.ui.api_key.setText('kENyGGsOnjJuLvIYqQ')
         self.ui.api_secret.setText('jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l')
-        self.ui.lineEdit_3.setText('1')
+        self.ui.lineEdit_3.setText('15')
         self.ui.lineEdit_4.setText('200')
         self.ui.lineEdit_5.setText('5')
         self.ui.lineEdit_6.setText('0.5')
+        self.ui.trailing_stop.setText('50')
+        self.ui.timer.setText('700')
 
         self.ui.w1.setText('0.1')
         self.ui.w2.setText('0.19')
@@ -180,6 +184,8 @@ class MainWindow(QMainWindow):
             int(self.ui.lineEdit_5.text())
             int(self.ui.lineEdit_4.text())
             round(float(self.ui.lineEdit_6.text()), 2)
+            int(self.ui.trailing_stop.text())
+            int(self.ui.timer.text())
             round(float(self.ui.w1.text()), 2)
             round(float(self.ui.w2.text()), 2)
             round(float(self.ui.w3.text()), 2)
@@ -223,6 +229,8 @@ class MainWindow(QMainWindow):
             self.w4 = round(float(self.ui.w4.text()), 2)
             self.w5 = round(float(self.ui.w5.text()), 2)
             self.order_weights = [self.w1, self.w2, self.w3, self.w4, self.w5]
+            self.trailing_stop = int(self.ui.trailing_stop.text())
+            self.timer = int(self.ui.timer.text())
         else:
             if self.balance == 0:
                 self.ui.textBrowser.append('Add money to your balance!')
@@ -231,14 +239,14 @@ class MainWindow(QMainWindow):
                 self.ui.textBrowser.append(self.balance)
                 return
 
-        # self.thread_manager.start(self.thread_calc)
-        _, _, x, y = self.qty_calc()
-        while x != 5 or y != 5:
+        if self.ui.checkAuto.isChecked():
             _, _, x, y = self.qty_calc()
-            print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
-            sleep(1)
+            while x != 5 or y != 5:
+                _, _, x, y = self.qty_calc()
+                print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
+                sleep(1)
+            print('Levels are good, get the view')
 
-        print('Levels are good, get the view')
         self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
         self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
 
@@ -262,18 +270,17 @@ class MainWindow(QMainWindow):
                 if status == "New":
                     # ожидаем установки ордеров..
                     while status == "New":
-                        status = self.bot.show_order_status()
-                        self.update_scrollbar()
-                        live_price = self.bot.get_live_price() + '$'
-                        live_pnl = '0 BTC'
-                        self.ui.label_12.setText(live_price)
-                        self.ui.label_15.setText(live_pnl)
-
-                        # через 10мин перестроить уровни
-                        elapsed_time = 60 * 15
+                        # через N sec перестроить уровни
+                        elapsed_time = self.timer
                         while elapsed_time > 0:
                             try:
                                 status = self.bot.show_order_status()
+                                self.update_scrollbar()
+                                live_price = self.bot.get_live_price() + '$'
+                                live_pnl = '0 BTC'
+                                self.ui.label_12.setText(live_price)
+                                self.ui.label_15.setText(live_pnl)
+
                                 if status == "Untriggered":
                                     break
                                 print(f"\relapsed_time: {elapsed_time}sec", end='')
@@ -281,7 +288,6 @@ class MainWindow(QMainWindow):
                                 sleep(1)
                             except Exception as e:
                                 print('\n', e)
-
                         else:
                             print('\ntimer finished!')
                             self.cancel()
@@ -297,7 +303,6 @@ class MainWindow(QMainWindow):
                             print('redraw completed..')
                             sleep(1)
                             self.create()
-
 
                 elif status == "Untriggered":
                     print("We have Untriggered order! Cancel another orders!")
@@ -319,6 +324,7 @@ class MainWindow(QMainWindow):
                             live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
                             self.ui.label_12.setText(live_price)
                             self.ui.label_15.setText(live_pnl)
+                            print(f"\r{live_pnl}", end='')
                             sleep(1)
 
                             try:
@@ -354,7 +360,7 @@ class MainWindow(QMainWindow):
                                     trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
                                     print(f"trigger_trailing: {trigger_trailing}$")
                                 else:
-                                    print(f"trigger_trailing: ****")
+                                    #print(f"trigger_trailing: ****")
                                     break
 
                                 while True:
@@ -363,9 +369,9 @@ class MainWindow(QMainWindow):
                                         try:
                                             sleep(1)
                                             res = self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
-                                                                                trailing_stop=50,
+                                                                                trailing_stop=self.trailing_stop,
                                                                                 new_trailing_active=trigger_trailing)
-                                            pprint.pprint(res)
+                                            #pprint.pprint(res)
                                         except Exception as e:
                                             print(e)
                                         else:
@@ -400,13 +406,13 @@ class MainWindow(QMainWindow):
                             sleep(1)
                             self.create()
 
-                else:
-                    self.update_scrollbar()
-                    live_price = self.bot.get_live_price() + '$'
-                    live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
-                    self.ui.label_12.setText(live_price)
-                    self.ui.label_15.setText(live_pnl)
-                    sleep(1)
+                # else:
+                #     self.update_scrollbar()
+                #     live_price = self.bot.get_live_price() + '$'
+                #     live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
+                #     self.ui.label_12.setText(live_price)
+                #     self.ui.label_15.setText(live_pnl)
+                #     sleep(1)
             else:
                 self.ui.createButton.setEnabled(True)
                 self.ui.cancelButton.setEnabled(True)
