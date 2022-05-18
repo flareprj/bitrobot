@@ -242,9 +242,6 @@ class MainWindow(QMainWindow):
         #         sleep(1)
         #     print('Levels are good, get the view')
 
-        self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-        self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
-
         print(f"Start.. time:{datetime.now()}")
 
         self.is_alive = True
@@ -257,7 +254,14 @@ class MainWindow(QMainWindow):
             self.ui.createButton.setEnabled(False)
             self.ui.cancelButton.setEnabled(False)
             self.cancel()
+            self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
+            self.arr_l.extend(self.arr_s)
             self.create_2()
+        else:
+            self.cancel()
+            self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
 
         while self.is_alive:
             if self.ui.checkAuto.isChecked():
@@ -296,8 +300,9 @@ class MainWindow(QMainWindow):
                             #     print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
                             #     sleep(1)
                             self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
+                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
                             print('redraw completed..')
+                            self.arr_l.extend(self.arr_s)
                             sleep(1)
                             self.create_2()
 
@@ -315,15 +320,6 @@ class MainWindow(QMainWindow):
                     else:
                         print(f"untriggered_order_id:{order_id}")
                         while status == "Untriggered":
-                            status = self.bot.show_order_status()
-                            price = self.bot.get_live_price()
-                            live_price = price + '$'
-                            live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
-                            self.ui.label_12.setText(live_price)
-                            self.ui.label_15.setText(live_pnl)
-                            #print(f"\r{live_pnl}", end='')
-                            sleep(1)
-
                             try:
                                 take_profit = float(
                                     self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
@@ -340,6 +336,12 @@ class MainWindow(QMainWindow):
                             else:
                                 while take_profit == 0 and take_profit is not None:
                                     status = self.bot.show_order_status()
+                                    price = self.bot.get_live_price()
+                                    live_price = price + '$'
+                                    live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
+                                    self.ui.label_12.setText(live_price)
+                                    self.ui.label_15.setText(live_pnl)
+                                    print(f"\r{live_pnl}", end='')
                                     take_profit = float(
                                         self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
                                             'result'][
@@ -365,10 +367,9 @@ class MainWindow(QMainWindow):
                                     if active_pos != 0 and active_pos is not None:
                                         try:
                                             sleep(1)
-                                            res = self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
-                                                                                trailing_stop=self.trailing_stop,
-                                                                                new_trailing_active=trigger_trailing)
-                                            #pprint.pprint(res)
+                                            self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
+                                                                          trailing_stop=self.trailing_stop,
+                                                                          new_trailing_active=trigger_trailing)
                                         except Exception as e:
                                             print(e)
                                         else:
@@ -378,11 +379,9 @@ class MainWindow(QMainWindow):
                                                     f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
                                                 break
 
-                        # ордер выполнен
                         print('Stop\Take Order was executed!')
                         status = self.bot.show_order_status()
                         print(status)
-                        # отменяем текущий активный ордер по его id
                         try:
                             self.bot.client.Order.Order_cancel(symbol="BTCUSD", order_id=order_id).result()
                         except Exception as e:
@@ -398,18 +397,14 @@ class MainWindow(QMainWindow):
                             #     sleep(1)
 
                             self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
+                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
+
+                            self.arr_l.extend(self.arr_s)
+
                             print('redraw completed..')
                             sleep(1)
                             self.create_2()
 
-                # else:
-                #     self.update_scrollbar()
-                #     live_price = self.bot.get_live_price() + '$'
-                #     live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
-                #     self.ui.label_12.setText(live_price)
-                #     self.ui.label_15.setText(live_pnl)
-                #     sleep(1)
             else:
                 self.ui.createButton.setEnabled(True)
                 self.ui.cancelButton.setEnabled(True)
@@ -419,7 +414,6 @@ class MainWindow(QMainWindow):
                 self.ui.label_12.setText(live_price)
                 self.ui.label_15.setText(live_pnl)
                 sleep(1)
-
 
     @pyqtSlot()
     def stop_process(self):
@@ -476,6 +470,84 @@ class MainWindow(QMainWindow):
         self.arr_l, self.arr_s, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
                                                                      self.limit,
                                                                      self.percents, self.order_weights)
+        print(self.arr_l, self.arr_s, qty_l, qty_s)
+
+        try:
+            self.ui.w1_2.setText(str(self.arr_l[0]))
+            self.ui.w2_2.setText(str(self.arr_l[1]))
+            self.ui.w3_2.setText(str(self.arr_l[2]))
+            self.ui.w4_2.setText(str(self.arr_l[3]))
+            self.ui.w5_2.setText(str(self.arr_l[4]))
+
+            self.ui.w1_3.setText(str(self.arr_s[0]))
+            self.ui.w2_3.setText(str(self.arr_s[1]))
+            self.ui.w3_3.setText(str(self.arr_s[2]))
+            self.ui.w4_3.setText(str(self.arr_s[3]))
+            self.ui.w5_3.setText(str(self.arr_s[4]))
+        except IndexError:
+            pass
+
+        self.ui.textBrowser.append(f"******LONGS******")
+        self.ui.textBrowser.append(f"-150: {self._zone_150}$ --- {found_zone_150}")
+        self.ui.textBrowser.append(f"-100: {self._zone_100}$ --- {found_zone_100}")
+        self.ui.textBrowser.append(f"-75: {self._zone_75}$ --- {found_zone_75}")
+        self.ui.textBrowser.append(f"-50: {self._zone_50}$ --- {found_zone_50}")
+        self.ui.textBrowser.append(f"-25: {self._zone_25}$ --- {found_zone_25}")
+        self.ui.textBrowser.append(f"{self.arr_l}")
+        self.ui.textBrowser.append(f"******SHORTS******")
+        self.ui.textBrowser.append(f"+150: {self.zone_150}$ --- {found_zone_150_}")
+        self.ui.textBrowser.append(f"+100: {self.zone_100}$ --- {found_zone_100_}")
+        self.ui.textBrowser.append(f"+75: {self.zone_75}$ --- {found_zone_75_}")
+        self.ui.textBrowser.append(f"+50: {self.zone_50}$ --- {found_zone_50_}")
+        self.ui.textBrowser.append(f"+25: {self.zone_25}$ --- {found_zone_25_}")
+        self.ui.textBrowser.append(f"{self.arr_s}")
+
+        self.ui.label_10.setText(str(self.POC) + '$')
+
+        return self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+               self.zone_75, self.zone_50, self.zone_25, self.price, self.POC
+
+    def draw_2(self):
+        obj = Strategy(self.radio, "BTCUSD", self.api_key, self.api_secret, MainWindow)
+
+        self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_100, self._zone_150, self.zone_150, self.zone_100, \
+        self.zone_75, self.zone_50, self.zone_25, df, self.POC, self.price, found_zone_150, found_zone_100, found_zone_75, found_zone_50, \
+        found_zone_25, found_zone_150_, found_zone_100_, found_zone_75_, found_zone_50_, found_zone_25_ = obj.draw_zones(
+            self.interval, self.limit)
+
+        self.canvas.update_figure()
+        self.canvas.axes.plot(df.index, df.close, 'r')
+        self.canvas.axes.hlines(int(self.price), 0, df.index.max(), colors='orange', linestyles='dashed')
+        self.canvas.axes.hlines(self.POC, 0, df.index.max(), colors='blue', linestyles='solid')
+
+        if self.price > self._zone_25:
+            self.canvas.axes.hlines(self._zone_25, 0, df.index.max(), colors='green', linestyles='solid')
+        elif self.price > self._zone_50:
+            self.canvas.axes.hlines(self._zone_50, 0, df.index.max(), colors='green', linestyles='solid')
+        elif self.price > self._zone_75:
+            self.canvas.axes.hlines(self._zone_75, 0, df.index.max(), colors='green', linestyles='solid')
+        elif self.price > self._zone_100:
+            self.canvas.axes.hlines(self._zone_100, 0, df.index.max(), colors='green', linestyles='solid')
+        elif self.price > self._zone_150:
+            self.canvas.axes.hlines(self._zone_150, 0, df.index.max(), colors='green', linestyles='solid')
+
+        if self.price < self.zone_25:
+            self.canvas.axes.hlines(self.zone_25, 0, df.index.max(), colors='red', linestyles='solid')
+        elif self.price < self.zone_50:
+            self.canvas.axes.hlines(self.zone_50, 0, df.index.max(), colors='red', linestyles='solid')
+        elif self.price < self.zone_75:
+            self.canvas.axes.hlines(self.zone_75, 0, df.index.max(), colors='red', linestyles='solid')
+        elif self.price < self.zone_100:
+            self.canvas.axes.hlines(self.zone_100, 0, df.index.max(), colors='red', linestyles='solid')
+        elif self.price < self.zone_150:
+            self.canvas.axes.hlines(self.zone_150, 0, df.index.max(), colors='red', linestyles='solid')
+
+        self.canvas.draw()
+
+        self.arr_l, self.arr_s, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
+                                                                     self.limit,
+                                                                     self.percents, self.order_weights)
+        print(self.arr_l, self.arr_s, qty_l, qty_s)
 
         try:
             self.ui.w1_2.setText(str(self.arr_l[0]))
@@ -529,16 +601,12 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def create_2(self):
         try:
-            self.bot.create_2_orders(self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50,
-                                   self._zone_25, self.zone_150, self.zone_100,
-                                   self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
+            self.bot.create_2_orders(min(self.arr_l), self._zone_150, self._zone_100, self._zone_75, self._zone_50,
+                                     self._zone_25, self.zone_150, self.zone_100,
+                                     self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
+
         except Exception as e:
-            if self.bot is None:
-                self.ui.textBrowser.append("No orders received, at the beginning press the Start button")
-            else:
-                self.ui.textBrowser.append(f"{e}")
-        else:
-            self.ui.textBrowser.append(f"The orders was created successfully!")
+            print(repr(e), e)
 
     @pyqtSlot()
     def cancel(self):

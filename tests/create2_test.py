@@ -17,6 +17,7 @@ class Create2Order(TestCase):
         self.percents = 0.5
         self.order_weights = [0.1, 0.19, 0.3, 0.45, 1]
 
+
     def test_create_limit(self):
         status = self.bot.show_order_status()
         if status == 'New':
@@ -31,8 +32,7 @@ class Create2Order(TestCase):
         found_zone_25, found_zone_150_, found_zone_100_, found_zone_75_, found_zone_50_, found_zone_25_ = self.bot.draw_zones(
             self.interval, self.limit)
 
-        print(self.arr_l)
-        print(self.arr_s)
+        self.arr_l.extend(self.arr_s)
 
-        self.bot.create_2_orders(self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100,
+        self.bot.create_2_orders(min(self.arr_l), self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100,
                         self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
