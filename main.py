@@ -102,7 +102,7 @@ class MainWindow(QMainWindow):
         self.ui.lineEdit_5.setText('5')
         self.ui.lineEdit_6.setText('0.5')
         self.ui.trailing_stop.setText('50')
-        self.ui.timer.setText('700')
+        self.ui.timer.setText('150')
 
         self.ui.w1.setText('0.1')
         self.ui.w2.setText('0.19')
@@ -239,13 +239,13 @@ class MainWindow(QMainWindow):
                 self.ui.textBrowser.append(self.balance)
                 return
 
-        if self.ui.checkAuto.isChecked():
-            _, _, x, y = self.qty_calc()
-            while x != 5 or y != 5:
-                _, _, x, y = self.qty_calc()
-                print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
-                sleep(1)
-            print('Levels are good, get the view')
+        # if self.ui.checkAuto.isChecked():
+        #     _, _, x, y = self.qty_calc()
+        #     while x != 5 or y != 5:
+        #         _, _, x, y = self.qty_calc()
+        #         print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
+        #         sleep(1)
+        #     print('Levels are good, get the view')
 
         self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
         self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
@@ -260,7 +260,7 @@ class MainWindow(QMainWindow):
             self.ui.createButton.setEnabled(False)
             self.ui.cancelButton.setEnabled(False)
             self.cancel()
-            self.create()
+            self.create_2()
 
         while self.is_alive:
             if self.ui.checkAuto.isChecked():
@@ -288,21 +288,21 @@ class MainWindow(QMainWindow):
                                 sleep(1)
                             except Exception as e:
                                 print('\n', e)
-
-                        print('\ntimer finished!')
-                        self.cancel()
-                        print('update levels..')
-                        # перестраиваем уровни
-                        _, _, x, y = self.qty_calc()
-                        while x != 5 or y != 5:
-                            _, _, x, y = self.qty_calc()
-                            print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
+                        else:
+                            print('\ntimer finished!')
+                            self.cancel()
+                            print('update levels..')
+                            # # перестраиваем уровни
+                            # _, _, x, y = self.qty_calc()
+                            # while x != 5 or y != 5:
+                            #     _, _, x, y = self.qty_calc()
+                            #     print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
+                            #     sleep(1)
+                            self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
+                            print('redraw completed..')
                             sleep(1)
-                        self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-                        self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
-                        print('redraw completed..')
-                        sleep(1)
-                        self.create()
+                            self.create_2()
 
                 elif status == "Untriggered":
                     print("We have Untriggered order! Cancel another orders!")
@@ -394,17 +394,17 @@ class MainWindow(QMainWindow):
                             self.cancel()
                             print('update levels..')
                             # перестраиваем уровни
-                            _, _, x, y = self.qty_calc()
-                            while x != 5 or y != 5:
-                                _, _, x, y = self.qty_calc()
-                                print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
-                                sleep(1)
+                            # _, _, x, y = self.qty_calc()
+                            # while x != 5 or y != 5:
+                            #     _, _, x, y = self.qty_calc()
+                            #     print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
+                            #     sleep(1)
 
                             self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
                             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
                             print('redraw completed..')
                             sleep(1)
-                            self.create()
+                            self.create_2()
 
                 # else:
                 #     self.update_scrollbar()
@@ -422,6 +422,7 @@ class MainWindow(QMainWindow):
                 self.ui.label_12.setText(live_price)
                 self.ui.label_15.setText(live_pnl)
                 sleep(1)
+
 
     @pyqtSlot()
     def stop_process(self):
@@ -518,6 +519,20 @@ class MainWindow(QMainWindow):
     def create(self):
         try:
             self.bot.create_orders(self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50,
+                                   self._zone_25, self.zone_150, self.zone_100,
+                                   self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
+        except Exception as e:
+            if self.bot is None:
+                self.ui.textBrowser.append("No orders received, at the beginning press the Start button")
+            else:
+                self.ui.textBrowser.append(f"{e}")
+        else:
+            self.ui.textBrowser.append(f"The orders was created successfully!")
+
+    @pyqtSlot()
+    def create_2(self):
+        try:
+            self.bot.create_2_orders(self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50,
                                    self._zone_25, self.zone_150, self.zone_100,
                                    self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
         except Exception as e:
