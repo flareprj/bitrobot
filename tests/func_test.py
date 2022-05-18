@@ -114,13 +114,13 @@ class WhileLoop(TestCase):
                     print('order is process...wait')
                     sleep(2)
                     self.status = "Filled"
-
-                print('Stop\Take Order was executed!')
-                print(self.status)
-                print('update levels..')
-                sleep(1)
-                print('create orders..')
-                sleep(1)
-                print('redraw completed..')
-                sleep(1)
-                self.status = "New"
+                else:
+                    print('Stop\Take Order was executed!')
+                    print(self.status)
+                    print('update levels..')
+                    sleep(1)
+                    print('create orders..')
+                    sleep(1)
+                    print('redraw completed..')
+                    sleep(1)
+                    self.status = "New"

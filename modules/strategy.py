@@ -193,6 +193,42 @@ class Strategy:
             self.data.create_limit_order("Sell", self.symbol, arr_s[4], zone_150, tp=zone_100,
                                          sl=zone_150 + delta)
 
+    def create_2_orders(self, arr_l, arr_s, _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100,
+                        zone_75, zone_50, zone_25, price, POC):
+
+        delta = int((_zone_25 - _zone_50) / 2)
+        if POC > price > _zone_25:
+            self.data.create_limit_order("Buy", self.symbol, arr_l[0], _zone_25, tp=POC,
+                                         sl=_zone_25 - delta)
+        elif _zone_25 > price > _zone_50:
+            self.data.create_limit_order("Buy", self.symbol, arr_l[1], _zone_50, tp=_zone_25,
+                                         sl=_zone_50 - delta)
+        elif _zone_50 > price > _zone_75:
+            self.data.create_limit_order("Buy", self.symbol, arr_l[2], _zone_75, tp=_zone_50,
+                                         sl=_zone_75 - delta)
+        elif _zone_75 > price > _zone_100:
+            self.data.create_limit_order("Buy", self.symbol, arr_l[3], _zone_100, tp=_zone_75,
+                                         sl=_zone_100 - delta)
+        elif _zone_100 > price > _zone_150:
+            self.data.create_limit_order("Buy", self.symbol, arr_l[4], _zone_150, tp=_zone_100,
+                                         sl=_zone_150 - delta)
+
+        if POC < price < zone_25:
+            self.data.create_limit_order("Sell", self.symbol, arr_s[0], zone_25, tp=POC,
+                                         sl=zone_25 + delta)
+        elif zone_25 < price < zone_50:
+            self.data.create_limit_order("Sell", self.symbol, arr_s[1], zone_50, tp=zone_25,
+                                         sl=zone_50 + delta)
+        elif zone_50 < price < zone_75:
+            self.data.create_limit_order("Sell", self.symbol, arr_s[2], zone_75, tp=zone_50,
+                                         sl=zone_75 + delta)
+        elif zone_75 < price < zone_100:
+            self.data.create_limit_order("Sell", self.symbol, arr_s[3], zone_100, tp=zone_75,
+                                         sl=zone_100 + delta)
+        elif zone_100 < price < zone_150:
+            self.data.create_limit_order("Sell", self.symbol, arr_s[4], zone_150, tp=zone_100,
+                                         sl=zone_150 + delta)
+
     def draw_zones(self, interval, limit):
         price = self.data.show_last_price()
         data_kline = Strategy.get_kline(self, interval=interval, limit=limit)

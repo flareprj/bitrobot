@@ -272,7 +272,7 @@ class MainWindow(QMainWindow):
                     while status == "New":
                         # через N sec перестроить уровни
                         elapsed_time = self.timer
-                        while elapsed_time > 0:
+                        while elapsed_time > 0 and status == "New":
                             try:
                                 status = self.bot.show_order_status()
                                 self.update_scrollbar()
@@ -288,21 +288,21 @@ class MainWindow(QMainWindow):
                                 sleep(1)
                             except Exception as e:
                                 print('\n', e)
-                        else:
-                            print('\ntimer finished!')
-                            self.cancel()
-                            print('update levels..')
-                            # перестраиваем уровни
+
+                        print('\ntimer finished!')
+                        self.cancel()
+                        print('update levels..')
+                        # перестраиваем уровни
+                        _, _, x, y = self.qty_calc()
+                        while x != 5 or y != 5:
                             _, _, x, y = self.qty_calc()
-                            while x != 5 or y != 5:
-                                _, _, x, y = self.qty_calc()
-                                print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
-                                sleep(1)
-                            self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
-                            print('redraw completed..')
+                            print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
                             sleep(1)
-                            self.create()
+                        self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+                        self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
+                        print('redraw completed..')
+                        sleep(1)
+                        self.create()
 
                 elif status == "Untriggered":
                     print("We have Untriggered order! Cancel another orders!")
@@ -324,7 +324,7 @@ class MainWindow(QMainWindow):
                             live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
                             self.ui.label_12.setText(live_price)
                             self.ui.label_15.setText(live_pnl)
-                            print(f"\r{live_pnl}", end='')
+                            #print(f"\r{live_pnl}", end='')
                             sleep(1)
 
                             try:
@@ -360,7 +360,7 @@ class MainWindow(QMainWindow):
                                     trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
                                     print(f"trigger_trailing: {trigger_trailing}$")
                                 else:
-                                    #print(f"trigger_trailing: ****")
+                                    print(f"trigger_trailing: ****")
                                     break
 
                                 while True:
