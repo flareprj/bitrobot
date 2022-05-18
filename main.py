@@ -1,26 +1,21 @@
-import pprint
 import time
 import sys
-import random
+
 from pybit.inverse_perpetual import HTTP
-from modules.strategy import *
-import matplotlib
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-from PyQt6.QtCore import pyqtSlot, QThreadPool, QTimer, QThread, QRunnable, pyqtSignal, QObject
+from PyQt6.QtCore import pyqtSlot, QThreadPool
 from PyQt6.QtWidgets import (
-    QLabel,
-    QWidget,
     QMainWindow,
-    QPushButton,
     QVBoxLayout,
     QApplication,
-    QTextEdit,
     QDialog
 )
 from gui.qt6 import Ui_MainWindow
 from gui.about import Ui_Dialog
+
+from modules.strategy import *
 
 
 class MplCanvas(FigureCanvas):
@@ -250,6 +245,8 @@ class MainWindow(QMainWindow):
         self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
         self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
 
+        print(f"Start.. time:{datetime.now()}")
+
         self.is_alive = True
         if self.is_alive:
             self.thread_manager.start(self.get_data)
@@ -266,7 +263,7 @@ class MainWindow(QMainWindow):
             if self.ui.checkAuto.isChecked():
                 status = self.bot.show_order_status()
                 order_id = ""
-                print(status)
+                print(f'\ncurrent_status: {status}')
                 if status == "New":
                     # ожидаем установки ордеров..
                     while status == "New":
