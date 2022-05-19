@@ -243,20 +243,21 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def get_data(self):
-        if self.ui.checkAuto.isChecked():
-            self.ui.createButton.setEnabled(False)
-            self.ui.cancelButton.setEnabled(False)
+        if self.is_alive:
+            if self.ui.checkAuto.isChecked():
+                self.ui.createButton.setEnabled(False)
+                self.ui.cancelButton.setEnabled(False)
 
-            self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
+                self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+                self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
 
-            self.arr_l.extend(self.arr_s)
-            self.arr_l = [x for x in self.arr_l if x != 0]
+                self.arr_l.extend(self.arr_s)
+                self.arr_l = [x for x in self.arr_l if x != 0]
 
-            self.create_2()
-        else:
-            self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
+                self.create_2()
+            else:
+                self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+                self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
 
         while self.is_alive:
             if self.ui.checkAuto.isChecked():
@@ -285,17 +286,19 @@ class MainWindow(QMainWindow):
                             except Exception as e:
                                 print('\n', e)
                         else:
-                            print('\ntimer finished!')
-                            self.cancel()
-                            print('update levels..')
-                            self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
-                            print('redraw completed..')
-                            self.arr_l.extend(self.arr_s)
-                            self.arr_l = [x for x in self.arr_l if x != 0]
-                            sleep(1)
-                            self.create_2()
-
+                            if self.is_alive:
+                                print('\ntimer finished!')
+                                self.cancel()
+                                print('update levels..')
+                                self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+                                self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
+                                print('redraw completed..')
+                                self.arr_l.extend(self.arr_s)
+                                self.arr_l = [x for x in self.arr_l if x != 0]
+                                sleep(1)
+                                self.create_2()
+                            else:
+                                break
                 elif status == "Untriggered":
                     print("We have Untriggered order! Cancel another orders!")
                     self.cancel()
@@ -404,9 +407,7 @@ class MainWindow(QMainWindow):
         if self.is_alive:
             status = self.bot.show_order_status()
             if status == "Untriggered" or status == "New":
-                self.is_alive = False
                 self.cancel()
-                QApplication.quit()
             self.is_alive = False
             self.ui.textBrowser.append('Stop receiving the data')
             self.update_scrollbar()
