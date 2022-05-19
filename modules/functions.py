@@ -131,7 +131,6 @@ class Endpoints:
 
         if order[0]['result'] is not None:
             result_code = order[0]['ret_code']
-            #print(f"result code:{result_code}")
             if result_code == 0:
                 result_side = order[0]['result']['side']
                 if result_side == "Buy":

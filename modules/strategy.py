@@ -24,10 +24,10 @@ class Strategy:
         result = self.client.Order.Order_cancelAll(symbol=self.symbol).result()
         result_code = result[0]['ret_code']
         if result_code == 0:
-            print('All orders cancelled successfully!')
+            print('\nAll orders cancelled successfully!')
             return 'All orders cancelled successfully!'
         else:
-            print(f"Error with code: {result_code}!")
+            print(f"\nError with code: {result_code}!")
             return f"Error with code: {result_code}!"
 
     def show_order_status(self):
@@ -128,8 +128,6 @@ class Strategy:
         price = self.data.show_last_price()
         percent = round(float(percent), 2)
         overall_contracts = self.count_contracts(price, balance, leverage=leverage, percent=percent)
-        # print(f"overall_contracts:{overall_contracts}$")
-
         data_kline = Strategy.get_kline(self, interval=interval, limit=limit)
 
         _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100, \
@@ -149,9 +147,6 @@ class Strategy:
         qty_s += 1 if price < zone_75 else 0
         qty_s += 1 if price < zone_50 else 0
         qty_s += 1 if price < zone_25 else 0
-
-        # print(f"qty_l:{qty_l}, qty_s:{qty_s}")
-        # print(f"price:{price}$")
 
         arr_l, arr_s = calc_orders(overall_contracts, qty_l, qty_s, order_weights)
         return arr_l, arr_s, qty_l, qty_s
@@ -214,6 +209,7 @@ class Strategy:
                                          sl=_zone_150 - delta)
         else:
             print(f'Longs not found! POC:{POC}, price:{price}')
+            return 0
 
         if price < zone_25:
             self.data.create_limit_order("Sell", self.symbol, arr_l, zone_25, tp=POC,
@@ -232,6 +228,7 @@ class Strategy:
                                          sl=zone_150 + delta)
         else:
             print(f'Shorts not found! POC:{POC}, price:{price}')
+            return 0
 
     def draw_zones(self, interval, limit):
         price = self.data.show_last_price()
@@ -274,7 +271,6 @@ class Strategy:
 
     @staticmethod
     def count_contracts(price, available_balance, leverage, percent):
-        # print(price, available_balance, leverage, percent)
         fees = 1 - (0.00075 * 2)
         return int(price * available_balance * leverage * percent * fees)
 
@@ -299,8 +295,6 @@ class Strategy:
                 for c, row in enumerate(spamreader):
                     if c == 1:
                         return int(row[6])
-
-        # return 42333
 
     @staticmethod
     def get_margin_poc(data):

@@ -16,6 +16,7 @@ from gui.qt6 import Ui_MainWindow
 from gui.about import Ui_Dialog
 
 from modules.strategy import *
+from modules.orders_calc import calc_orders
 
 
 class MplCanvas(FigureCanvas):
@@ -65,7 +66,7 @@ class MainWindow(QMainWindow):
         self.api_secret = None
         self.radio = None
         self.w1 = self.w2 = self.w3 = self.w4 = self.w5 = None
-        self.order_weights = None
+        self.order_weights = [0.1, 0.19, 0.3, 0.45, 1]
         self.arr_l = self.arr_s = None
 
         self.ui = Ui_MainWindow()
@@ -234,14 +235,6 @@ class MainWindow(QMainWindow):
                 self.ui.textBrowser.append(self.balance)
                 return
 
-        # if self.ui.checkAuto.isChecked():
-        #     _, _, x, y = self.qty_calc()
-        #     while x != 5 or y != 5:
-        #         _, _, x, y = self.qty_calc()
-        #         print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
-        #         sleep(1)
-        #     print('Levels are good, get the view')
-
         print(f"Start.. time:{datetime.now()}")
 
         self.is_alive = True
@@ -253,13 +246,15 @@ class MainWindow(QMainWindow):
         if self.ui.checkAuto.isChecked():
             self.ui.createButton.setEnabled(False)
             self.ui.cancelButton.setEnabled(False)
-            self.cancel()
+
             self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
+
             self.arr_l.extend(self.arr_s)
+            self.arr_l = [x for x in self.arr_l if x != 0]
+
             self.create_2()
         else:
-            self.cancel()
             self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
 
@@ -268,10 +263,9 @@ class MainWindow(QMainWindow):
                 status = self.bot.show_order_status()
                 order_id = ""
                 print(f'\ncurrent_status: {status}')
+                sleep(1)
                 if status == "New":
-                    # ожидаем установки ордеров..
                     while status == "New":
-                        # через N sec перестроить уровни
                         elapsed_time = self.timer
                         while elapsed_time > 0 and status == "New":
                             try:
@@ -281,10 +275,11 @@ class MainWindow(QMainWindow):
                                 live_pnl = '0 BTC'
                                 self.ui.label_12.setText(live_price)
                                 self.ui.label_15.setText(live_pnl)
-
                                 if status == "Untriggered":
                                     break
                                 print(f"\relapsed_time: {elapsed_time}sec", end='')
+                                live_elapsed = str(elapsed_time) + " sec"
+                                self.ui.label_22.setText(live_elapsed)
                                 elapsed_time -= 1
                                 sleep(1)
                             except Exception as e:
@@ -293,16 +288,11 @@ class MainWindow(QMainWindow):
                             print('\ntimer finished!')
                             self.cancel()
                             print('update levels..')
-                            # # перестраиваем уровни
-                            # _, _, x, y = self.qty_calc()
-                            # while x != 5 or y != 5:
-                            #     _, _, x, y = self.qty_calc()
-                            #     print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
-                            #     sleep(1)
                             self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
                             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
                             print('redraw completed..')
                             self.arr_l.extend(self.arr_s)
+                            self.arr_l = [x for x in self.arr_l if x != 0]
                             sleep(1)
                             self.create_2()
 
@@ -359,7 +349,7 @@ class MainWindow(QMainWindow):
                                     trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
                                     print(f"trigger_trailing: {trigger_trailing}$")
                                 else:
-                                    print(f"trigger_trailing: ****")
+                                    #print(f"\ntrigger_trailing: ****")
                                     break
 
                                 while True:
@@ -389,18 +379,12 @@ class MainWindow(QMainWindow):
                         else:
                             self.cancel()
                             print('update levels..')
-                            # перестраиваем уровни
-                            # _, _, x, y = self.qty_calc()
-                            # while x != 5 or y != 5:
-                            #     _, _, x, y = self.qty_calc()
-                            #     print(f'\rLess levels then needs, wait.. x:{x}, y:{y}', end='')
-                            #     sleep(1)
 
                             self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
                             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
 
                             self.arr_l.extend(self.arr_s)
-
+                            self.arr_l = [x for x in self.arr_l if x != 0]
                             print('redraw completed..')
                             sleep(1)
                             self.create_2()
@@ -418,6 +402,11 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def stop_process(self):
         if self.is_alive:
+            status = self.bot.show_order_status()
+            if status == "Untriggered" or status == "New":
+                self.is_alive = False
+                self.cancel()
+                QApplication.quit()
             self.is_alive = False
             self.ui.textBrowser.append('Stop receiving the data')
             self.update_scrollbar()
@@ -467,25 +456,25 @@ class MainWindow(QMainWindow):
 
         self.canvas.draw()
 
-        self.arr_l, self.arr_s, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
+        _, _, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
                                                                      self.limit,
                                                                      self.percents, self.order_weights)
-        print(self.arr_l, self.arr_s, qty_l, qty_s)
 
-        try:
-            self.ui.w1_2.setText(str(self.arr_l[0]))
-            self.ui.w2_2.setText(str(self.arr_l[1]))
-            self.ui.w3_2.setText(str(self.arr_l[2]))
-            self.ui.w4_2.setText(str(self.arr_l[3]))
-            self.ui.w5_2.setText(str(self.arr_l[4]))
+        deposit = int(count_deposit(self.price, self.balance, self.leverage, self.percents))
 
-            self.ui.w1_3.setText(str(self.arr_s[0]))
-            self.ui.w2_3.setText(str(self.arr_s[1]))
-            self.ui.w3_3.setText(str(self.arr_s[2]))
-            self.ui.w4_3.setText(str(self.arr_s[3]))
-            self.ui.w5_3.setText(str(self.arr_s[4]))
-        except IndexError:
-            pass
+        self.arr_l, self.arr_s = fills(deposit, qty_l, qty_s, self.order_weights)
+
+        self.ui.w1_2.setText(str(self.arr_l[0]))
+        self.ui.w2_2.setText(str(self.arr_l[1]))
+        self.ui.w3_2.setText(str(self.arr_l[2]))
+        self.ui.w4_2.setText(str(self.arr_l[3]))
+        self.ui.w5_2.setText(str(self.arr_l[4]))
+
+        self.ui.w1_3.setText(str(self.arr_s[0]))
+        self.ui.w2_3.setText(str(self.arr_s[1]))
+        self.ui.w3_3.setText(str(self.arr_s[2]))
+        self.ui.w4_3.setText(str(self.arr_s[3]))
+        self.ui.w5_3.setText(str(self.arr_s[4]))
 
         self.ui.textBrowser.append(f"******LONGS******")
         self.ui.textBrowser.append(f"-150: {self._zone_150}$ --- {found_zone_150}")
@@ -547,22 +536,22 @@ class MainWindow(QMainWindow):
         self.arr_l, self.arr_s, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
                                                                      self.limit,
                                                                      self.percents, self.order_weights)
-        print(self.arr_l, self.arr_s, qty_l, qty_s)
 
-        try:
-            self.ui.w1_2.setText(str(self.arr_l[0]))
-            self.ui.w2_2.setText(str(self.arr_l[1]))
-            self.ui.w3_2.setText(str(self.arr_l[2]))
-            self.ui.w4_2.setText(str(self.arr_l[3]))
-            self.ui.w5_2.setText(str(self.arr_l[4]))
+        deposit = int(count_deposit(self.price, self.balance, self.leverage, self.percents))
 
-            self.ui.w1_3.setText(str(self.arr_s[0]))
-            self.ui.w2_3.setText(str(self.arr_s[1]))
-            self.ui.w3_3.setText(str(self.arr_s[2]))
-            self.ui.w4_3.setText(str(self.arr_s[3]))
-            self.ui.w5_3.setText(str(self.arr_s[4]))
-        except IndexError:
-            pass
+        self.arr_l, self.arr_s = fills(deposit, qty_l, qty_s, self.order_weights)
+
+        self.ui.w1_2.setText(str(self.arr_l[0]))
+        self.ui.w2_2.setText(str(self.arr_l[1]))
+        self.ui.w3_2.setText(str(self.arr_l[2]))
+        self.ui.w4_2.setText(str(self.arr_l[3]))
+        self.ui.w5_2.setText(str(self.arr_l[4]))
+
+        self.ui.w1_3.setText(str(self.arr_s[0]))
+        self.ui.w2_3.setText(str(self.arr_s[1]))
+        self.ui.w3_3.setText(str(self.arr_s[2]))
+        self.ui.w4_3.setText(str(self.arr_s[3]))
+        self.ui.w5_3.setText(str(self.arr_s[4]))
 
         self.ui.textBrowser.append(f"******LONGS******")
         self.ui.textBrowser.append(f"-150: {self._zone_150}$ --- {found_zone_150}")
