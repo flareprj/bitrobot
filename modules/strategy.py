@@ -1,5 +1,3 @@
-import pprint
-
 import bybit
 import warnings
 import pandas as pd
@@ -45,7 +43,7 @@ class Strategy:
         if result == 0:
             return result
         else:
-            result = '{:0.9f}'.format(result)
+            result = '{:0.8f}'.format(result)
             return result
 
     def get_live_price(self):

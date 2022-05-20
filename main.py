@@ -1,4 +1,3 @@
-import time
 import sys
 
 from pybit.inverse_perpetual import HTTP
@@ -16,7 +15,6 @@ from gui.qt6 import Ui_MainWindow
 from gui.about import Ui_Dialog
 
 from modules.strategy import *
-from modules.orders_calc import calc_orders
 
 
 class MplCanvas(FigureCanvas):
@@ -106,7 +104,7 @@ class MainWindow(QMainWindow):
         self.ui.w4.setText('0.45')
         self.ui.w5.setText('1')
 
-        self.ui.checkAuto.setChecked(True)
+        self.ui.checkAuto.setChecked(False)
 
         self.thread_manager = QThreadPool()
 
@@ -271,7 +269,6 @@ class MainWindow(QMainWindow):
                         while elapsed_time > 0 and status == "New":
                             try:
                                 status = self.bot.show_order_status()
-                                self.update_scrollbar()
                                 live_price = self.bot.get_live_price() + '$'
                                 live_pnl = '0 BTC'
                                 self.ui.label_12.setText(live_price)
@@ -352,7 +349,6 @@ class MainWindow(QMainWindow):
                                     trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
                                     print(f"trigger_trailing: {trigger_trailing}$")
                                 else:
-                                    #print(f"\ntrigger_trailing: ****")
                                     break
 
                                 while True:
@@ -395,7 +391,6 @@ class MainWindow(QMainWindow):
             else:
                 self.ui.createButton.setEnabled(True)
                 self.ui.cancelButton.setEnabled(True)
-                self.update_scrollbar()
                 live_price = self.bot.get_live_price() + '$'
                 live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
                 self.ui.label_12.setText(live_price)
@@ -492,6 +487,8 @@ class MainWindow(QMainWindow):
         self.ui.textBrowser.append(f"+25: {self.zone_25}$ --- {found_zone_25_}")
         self.ui.textBrowser.append(f"{self.arr_s}")
 
+        self.update_scrollbar()
+
         self.ui.label_10.setText(str(self.POC) + '$')
 
         return self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
@@ -569,6 +566,8 @@ class MainWindow(QMainWindow):
         self.ui.textBrowser.append(f"+25: {self.zone_25}$ --- {found_zone_25_}")
         self.ui.textBrowser.append(f"{self.arr_s}")
 
+        self.update_scrollbar()
+
         self.ui.label_10.setText(str(self.POC) + '$')
 
         return self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
@@ -587,6 +586,7 @@ class MainWindow(QMainWindow):
                 self.ui.textBrowser.append(f"{e}")
         else:
             self.ui.textBrowser.append(f"The orders was created successfully!")
+            self.update_scrollbar()
 
     @pyqtSlot()
     def create_2(self):
@@ -602,6 +602,7 @@ class MainWindow(QMainWindow):
     def cancel(self):
         res = self.bot.cancel_orders()
         self.ui.textBrowser.append(f"{res}")
+        self.update_scrollbar()
 
 
 if __name__ == "__main__":
