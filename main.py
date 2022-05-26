@@ -255,6 +255,7 @@ class MainWindow(QMainWindow):
                 self.arr_l = [x for x in self.arr_l if x != 0]
 
                 self.create_2()
+                sleep(3)
             else:
                 self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
                 self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
@@ -263,7 +264,7 @@ class MainWindow(QMainWindow):
             if self.ui.checkAuto.isChecked():
                 self.status = self.bot.show_order_status()
                 print(f'\ncurrent_status: {self.status}')
-                sleep(1)
+                sleep(5)
                 if self.status == "New":
                     while self.status == "New":
                         elapsed_time = self.timer
@@ -285,16 +286,7 @@ class MainWindow(QMainWindow):
                                 print('\n', e)
                         else:
                             print('\ntimer finished!')
-                            self.cancel()
-                            print('update levels..')
-                            self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
-                            print('redraw completed..')
-                            self.arr_l.extend(self.arr_s)
-                            self.arr_l = [x for x in self.arr_l if x != 0]
-                            self.create_2()
-                            sleep(3)
-                            self.status = self.bot.show_order_status()
+                            self.update_redraw()
 
                 elif self.status == "Untriggered":
                     print("We have Untriggered order! Cancel another orders!")
@@ -407,17 +399,9 @@ class MainWindow(QMainWindow):
                         except Exception as e:
                             print(e)
                         else:
-                            self.cancel()
-                            print('update levels..')
-                            self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
-                            self.arr_l.extend(self.arr_s)
-                            self.arr_l = [x for x in self.arr_l if x != 0]
-                            print('redraw completed..')
-                            self.create_2()
-                            sleep(3)
-                            self.status = self.bot.show_order_status()
-
+                            self.update_redraw()
+                else:
+                    self.update_redraw()
             else:
                 self.ui.createButton.setEnabled(True)
                 self.ui.cancelButton.setEnabled(True)
@@ -438,6 +422,18 @@ class MainWindow(QMainWindow):
             self.update_scrollbar()
         if not self.ui.startButton.isEnabled():
             self.ui.startButton.setEnabled(True)
+
+    def update_redraw(self):
+        self.cancel()
+        print('update levels..')
+        self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+        self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
+        self.arr_l.extend(self.arr_s)
+        self.arr_l = [x for x in self.arr_l if x != 0]
+        print('redraw completed..')
+        self.create_2()
+        sleep(3)
+        self.status = self.bot.show_order_status()
 
     def qty_calc(self):
         _, _, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,

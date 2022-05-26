@@ -239,15 +239,16 @@ class WhileLoop(TestCase):
     def setUp(self) -> None:
         self.status_1 = "New"
         self.status_2 = "Untriggered"
-        self.status_3 = ""
-        self.status = self.status_1
+        self.status_3 = "Filled"
+        self.status_4 = "Cancelled"
+        self.status = self.status_4
         self.is_alive = True
         self.timer = 10
 
     def test_New(self):
         while self.is_alive:
-            order_id = ""
             print(self.status)
+            sleep(2)
             if self.status == "New":
                 while self.status == "New":
                     elapsed_time = self.timer
@@ -275,7 +276,7 @@ class WhileLoop(TestCase):
                     sleep(2)
                     self.status = "Filled"
                 else:
-                    print('Stop\Take Order was executed!')
+                    print('Stop-Take Order was executed!')
                     print(self.status)
                     print('update levels..')
                     sleep(1)
@@ -284,3 +285,10 @@ class WhileLoop(TestCase):
                     print('redraw completed..')
                     sleep(1)
                     self.status = "New"
+            else:
+                sleep(3)
+                print('cancel orders if exists')
+                sleep(1)
+                print('create orders..')
+                self.status = "New"
+                sleep(1)
