@@ -19,14 +19,18 @@ class Strategy:
         self.app = app
 
     def cancel_orders(self):
-        result = self.client.Order.Order_cancelAll(symbol=self.symbol).result()
-        result_code = result[0]['ret_code']
-        if result_code == 0:
-            print('\nAll orders cancelled successfully!')
-            return 'All orders cancelled successfully!'
+        try:
+            result = self.client.Order.Order_cancelAll(symbol=self.symbol).result()
+        except Exception as e:
+            print(e)
         else:
-            print(f"\nError with code: {result_code}!")
-            return f"Error with code: {result_code}!"
+            result_code = result[0]['ret_code']
+            if result_code == 0:
+                print('\nAll orders cancelled successfully!')
+                return 'All orders cancelled successfully!'
+            else:
+                print(f"\nError with code: {result_code}!")
+                return f"Error with code: {result_code}!"
 
     def show_order_status(self):
         try:
@@ -49,7 +53,7 @@ class Strategy:
     def get_live_price(self):
         return str(self.data.show_last_price())
 
-    def get_kline(self, interval, limit):
+    def get_kline(self, interval: str, limit: int):
         allowed = ['1', '3', '5', '15', '30', '60', '120', '240', '360', '720', 'D', 'W', 'M']
         if interval in allowed:
             try:
@@ -280,6 +284,7 @@ class Strategy:
                 timeout=10,
                 headers={'User-Agent': 'some cool user-agent'})
         except requests.exceptions.RequestException as e:
+            print(f"requests error! {e}")
             raise SystemExit(e)
         else:
             url_content = csv_url.content

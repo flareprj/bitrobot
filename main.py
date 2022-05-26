@@ -1,3 +1,4 @@
+import pprint
 import sys
 
 from pybit.inverse_perpetual import HTTP
@@ -91,18 +92,18 @@ class MainWindow(QMainWindow):
 
         self.ui.api_key.setText('kENyGGsOnjJuLvIYqQ')
         self.ui.api_secret.setText('jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l')
-        self.ui.lineEdit_3.setText('15')
-        self.ui.lineEdit_4.setText('200')
-        self.ui.lineEdit_5.setText('5')
-        self.ui.lineEdit_6.setText('0.5')
+        self.ui.lineEdit_3.setText('1')
+        self.ui.lineEdit_4.setText('60')
+        self.ui.lineEdit_5.setText('20')
+        self.ui.lineEdit_6.setText('0.1')
         self.ui.trailing_stop.setText('50')
-        self.ui.timer.setText('150')
+        self.ui.timer.setText('600')
 
         self.ui.w1.setText('0.1')
-        self.ui.w2.setText('0.19')
-        self.ui.w3.setText('0.3')
-        self.ui.w4.setText('0.45')
-        self.ui.w5.setText('1')
+        self.ui.w2.setText('0')
+        self.ui.w3.setText('0')
+        self.ui.w4.setText('0')
+        self.ui.w5.setText('0')
 
         self.ui.checkAuto.setChecked(False)
 
@@ -316,10 +317,12 @@ class MainWindow(QMainWindow):
                                         'result']['take_profit'])
                                 last_price = float(self.bot.get_live_price())
                                 entry_price = float(self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
+                                side = self.session.my_position(symbol="BTCUSD")['result']['side']
 
                                 print(f"take_profit: {take_profit}")
                                 print(f"last_price: {last_price}")
                                 print(f"entry_price: {entry_price}")
+                                print(f"side: {side}")
 
                             except Exception as e:
                                 print(repr(e), e)
@@ -331,12 +334,41 @@ class MainWindow(QMainWindow):
                                     live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
                                     self.ui.label_12.setText(live_price)
                                     self.ui.label_15.setText(live_pnl)
-                                    print(f"\r{live_pnl}", end='')
-                                    take_profit = float(
-                                        self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
-                                            'result'][
-                                            'take_profit'])
+                                    print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
+
+                                    # TODO при достижении цены выше\ниже условного трейдинга, переносить стоп в б\у
+
+                                    # if entry_price != 0:
+                                    #     if side == "Buy":
+                                    #         price = float(self.bot.get_live_price())
+                                    #         if price > entry_price + 50:
+                                    #             moment = int(entry_price + 25)
+                                    #             print(f"\nreplace buy-stop! price:{price}, moment:{moment}")
+                                    #             try:
+                                    #                 res = self.session.replace_active_order(symbol="BTCUSD", order_id=order_id,
+                                    #                                              stop_loss=moment).result()
+                                    #                 pprint.pprint(res)
+                                    #             except Exception as e:
+                                    #                 print(e)
+                                    #             entry_price = 0
+                                    #     elif side == "Sell":
+                                    #         price = float(self.bot.get_live_price())
+                                    #         if price < entry_price - 50:
+                                    #             moment = int(entry_price - 25)
+                                    #             print(f"\nreplace sell-stop! price:{price}, moment:{moment}")
+                                    #             try:
+                                    #                 res = self.session.replace_active_order(symbol="BTCUSD", order_id=order_id,
+                                    #                                              stop_loss=moment).result()
+                                    #                 pprint.pprint(res)
+                                    #             except Exception as e:
+                                    #                 print(e)
+                                    #             entry_price = 0
+
                                     if status != "Untriggered":
+                                        take_profit = float(
+                                            self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
+                                                'result'][
+                                                'take_profit'])
                                         entry_price = float(
                                             self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
                                         break
@@ -368,7 +400,7 @@ class MainWindow(QMainWindow):
                                                     f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
                                                 break
 
-                        print('Stop\Take Order was executed!')
+                        print('\nStop\Take Order was executed!')
                         status = self.bot.show_order_status()
                         print(status)
                         try:

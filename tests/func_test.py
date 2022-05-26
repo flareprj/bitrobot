@@ -3,8 +3,167 @@ from unittest import TestCase
 from modules.strategy import *
 
 
-class LimitOrder(TestCase):
+class UpdateOrders(TestCase):
+    def setUp(self) -> None:
+        warnings.simplefilter(action='ignore', category=DeprecationWarning)
+        self.api_key = 'kENyGGsOnjJuLvIYqQ'
+        self.api_secret = 'jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l'
+        self.bot = Strategy(test=False, symbol="BTCUSD", api_key=self.api_key,
+                            api_secret=self.api_secret, app=None)
+        self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
+        self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
+                            api_secret=self.api_secret,
+                            recv_window=10000)
+        self.side = "Buy"
+        self.timer = 5
+        self.interval = "1"
+        self.limit = 60
+        self.balance = self.bot.data.available_balance()
+        self.leverage = 20
+        self.percents = 0.1
+        self.order_weights = [0.1, 0, 0, 0, 0]
 
+    def test_update_2_orders(self):
+        self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_100, self._zone_150, self.zone_150, self.zone_100, \
+        self.zone_75, self.zone_50, self.zone_25, df, self.POC, self.price, found_zone_150, found_zone_100, found_zone_75, found_zone_50, \
+        found_zone_25, found_zone_150_, found_zone_100_, found_zone_75_, found_zone_50_, found_zone_25_ = self.bot.draw_zones(
+            self.interval, self.limit)
+
+        self.arr_l, self.arr_s, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
+                                                                     self.limit,
+                                                                     self.percents, self.order_weights)
+
+        deposit = int(count_deposit(self.price, self.balance, self.leverage, self.percents))
+        self.arr_l, self.arr_s = fills(deposit, qty_l, qty_s, self.order_weights)
+
+        self.arr_l.extend(self.arr_s)
+        self.arr_l = [x for x in self.arr_l if x != 0]
+
+        try:
+            self.bot.create_2_orders(min(self.arr_l), self._zone_150, self._zone_100, self._zone_75,
+                                     self._zone_50,
+                                     self._zone_25, self.zone_150, self.zone_100,
+                                     self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
+
+        except Exception as e:
+            print(repr(e), e)
+
+        i = 10
+        while i > 0:
+            status = self.bot.show_order_status()
+            elapsed_time = self.timer
+            while elapsed_time > 0 and status == "New":
+                try:
+                    status = self.bot.show_order_status()
+                    #print(f"\rstatus:{status}, elapsed_time: {elapsed_time}sec", end='')
+                    print(f"elapsed_time: {elapsed_time}sec")
+                    elapsed_time -= 1
+                    sleep(1)
+                except Exception as e:
+                    print('\n', e)
+            else:
+                print('\ntimer finished!')
+                self.bot.cancel_orders()
+                print('update levels..')
+
+                self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_100, self._zone_150, self.zone_150, self.zone_100, \
+                self.zone_75, self.zone_50, self.zone_25, df, self.POC, self.price, found_zone_150, found_zone_100, found_zone_75, found_zone_50, \
+                found_zone_25, found_zone_150_, found_zone_100_, found_zone_75_, found_zone_50_, found_zone_25_ = self.bot.draw_zones(
+                    self.interval, self.limit)
+
+                self.arr_l, self.arr_s, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
+                                                                             self.limit,
+                                                                             self.percents, self.order_weights)
+
+                deposit = int(count_deposit(self.price, self.balance, self.leverage, self.percents))
+                self.arr_l, self.arr_s = fills(deposit, qty_l, qty_s, self.order_weights)
+
+                self.arr_l.extend(self.arr_s)
+                self.arr_l = [x for x in self.arr_l if x != 0]
+                print('redraw completed..')
+                sleep(1)
+                try:
+                    self.bot.create_2_orders(min(self.arr_l), self._zone_150, self._zone_100, self._zone_75,
+                                             self._zone_50,
+                                             self._zone_25, self.zone_150, self.zone_100,
+                                             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
+
+                except Exception as e:
+                    print(repr(e), e)
+                else:
+                    i -= 1
+                    print(f"i:{i}")
+
+
+class ReplaceStopOrder(TestCase):
+    def setUp(self) -> None:
+        warnings.simplefilter(action='ignore', category=DeprecationWarning)
+        self.api_key = 'kENyGGsOnjJuLvIYqQ'
+        self.api_secret = 'jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l'
+        self.bot = Strategy(test=False, symbol="BTCUSD", api_key='kENyGGsOnjJuLvIYqQ',
+                            api_secret='jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l', app=None)
+        self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
+        # self.session = HTTP("https://api-testnet.bybit.com", api_key=self.api_key,
+        #                     api_secret=self.api_secret,
+        #                     recv_window=10000)
+        self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
+                            api_secret=self.api_secret,
+                            recv_window=10000)
+        self.side = "Buy"
+
+    def test_replace_stop_limit(self):
+        price = self.data.show_last_price() - 15
+        tp = int(price + 500)
+        sl = int(price - 150)
+        self.session.place_active_order(
+            symbol="BTCUSD",
+            side="Buy",
+            order_type="Limit",
+            qty=1,
+            price=price,
+            time_in_force="GoodTillCancel",
+            take_profit=tp,
+        )
+        res = self.session.place_conditional_order(
+            symbol="BTCUSD",
+            order_type="Limit",
+            side="Sell",
+            qty=1,
+            price=sl,
+            base_price=price,
+            stop_px=sl,
+            time_in_force="GoodTillCancel",
+            close_on_trigger=True
+        )
+        pprint.pprint(res)
+        sleep(5)
+        status = self.bot.show_order_status()
+        while status == "New":
+            status = self.bot.show_order_status()
+            print(f"\r{status}", end='')
+            sleep(1)
+        else:
+            status = self.bot.show_order_status()
+            if status == "Untriggered":
+                sleep(3)
+                try:
+                    order_id = self.session.get_conditional_order(
+                            symbol="BTCUSD"
+                     )['result']['data'][0]['stop_order_id']
+                    print(order_id)
+                    sleep(3)
+
+                    res = self.session.replace_conditional_order(
+                            symbol="BTCUSD",
+                            stop_order_id=str(order_id),
+                            p_r_price=sl+50
+                    )
+                    pprint.pprint(res)
+                except Exception as e:
+                    print(e)
+
+
+class LimitOrder(TestCase):
     def setUp(self) -> None:
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
         self.api_key = 'qwZENih1NkKLge7kZX'

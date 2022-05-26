@@ -122,27 +122,29 @@ class Endpoints:
             order = self.client.Order.Order_new(side=side, symbol=symbol, order_type="Limit",
                                                 qty=str(quantity), price=price, take_profit=tp, stop_loss=sl,
                                                 time_in_force="GoodTillCancel").result()
+        except TypeError as err:
+            print(f"create_limit_order - TypeError:{err}")
+            return False
+        except Exception as err:
+            print(f"{repr(err)}, {err}")
+        else:
             if order[0]['result'] is None:
                 print('result created order is None!')
                 return False
-        except TypeError as err:
-            print(f"create_limit_order:{err}")
-            return False
-
-        if order[0]['result'] is not None:
-            result_code = order[0]['ret_code']
-            if result_code == 0:
-                result_side = order[0]['result']['side']
-                if result_side == "Buy":
-                    print(
-                        f"Order limit {colored(result_side, 'green')} with id {order[0]['result']['order_id']}, price:{price}$")
+            if order[0]['result'] is not None:
+                result_code = order[0]['ret_code']
+                if result_code == 0:
+                    result_side = order[0]['result']['side']
+                    if result_side == "Buy":
+                        print(
+                            f"Order limit {colored(result_side, 'green')} with id {order[0]['result']['order_id']}, price:{price}$")
+                    else:
+                        print(
+                            f"Order limit {colored(result_side, 'red')} with id {order[0]['result']['order_id']}, price:{price}$")
+                    return order
                 else:
-                    print(
-                        f"Order limit {colored(result_side, 'red')} with id {order[0]['result']['order_id']}, price:{price}$")
-                return order
-            else:
-                print(f"Order limit Error with code: {result_code}!")
-                return False
+                    print(f"Order limit Error with code: {result_code}!")
+                    return False
 
     @exx
     def create_conditional_order(self, order_type, side, symbol, qty, base_price, stop_px, time_in_force):
