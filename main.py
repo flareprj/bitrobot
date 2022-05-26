@@ -1,4 +1,4 @@
-import pprint
+#import pprint
 import sys
 
 from pybit.inverse_perpetual import HTTP
@@ -40,6 +40,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
+        self.status = None
         self.timer = None
         self.trailing_stop = None
         self.POC = None
@@ -260,21 +261,20 @@ class MainWindow(QMainWindow):
 
         while self.is_alive:
             if self.ui.checkAuto.isChecked():
-                status = self.bot.show_order_status()
-                order_id = ""
-                print(f'\ncurrent_status: {status}')
+                self.status = self.bot.show_order_status()
+                print(f'\ncurrent_status: {self.status}')
                 sleep(1)
-                if status == "New":
-                    while status == "New":
+                if self.status == "New":
+                    while self.status == "New":
                         elapsed_time = self.timer
-                        while elapsed_time > 0 and status == "New":
+                        while elapsed_time > 0 and self.status == "New":
                             try:
-                                status = self.bot.show_order_status()
+                                self.status = self.bot.show_order_status()
                                 live_price = self.bot.get_live_price() + '$'
                                 live_pnl = '0 BTC'
                                 self.ui.label_12.setText(live_price)
                                 self.ui.label_15.setText(live_pnl)
-                                if status == "Untriggered":
+                                if self.status == "Untriggered":
                                     break
                                 print(f"\relapsed_time: {elapsed_time}sec", end='')
                                 live_elapsed = str(elapsed_time) + " sec"
@@ -284,23 +284,22 @@ class MainWindow(QMainWindow):
                             except Exception as e:
                                 print('\n', e)
                         else:
-                            if self.is_alive:
-                                print('\ntimer finished!')
-                                self.cancel()
-                                print('update levels..')
-                                self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
-                                self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
-                                print('redraw completed..')
-                                self.arr_l.extend(self.arr_s)
-                                self.arr_l = [x for x in self.arr_l if x != 0]
-                                sleep(1)
-                                self.create_2()
-                            else:
-                                break
-                elif status == "Untriggered":
+                            print('\ntimer finished!')
+                            self.cancel()
+                            print('update levels..')
+                            self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
+                            print('redraw completed..')
+                            self.arr_l.extend(self.arr_s)
+                            self.arr_l = [x for x in self.arr_l if x != 0]
+                            self.create_2()
+                            sleep(3)
+                            self.status = self.bot.show_order_status()
+
+                elif self.status == "Untriggered":
                     print("We have Untriggered order! Cancel another orders!")
                     self.cancel()
-                    status = self.bot.show_order_status()
+                    self.status = self.bot.show_order_status()
                     try:
                         order_id = \
                             self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
@@ -310,7 +309,7 @@ class MainWindow(QMainWindow):
                         print(e)
                     else:
                         print(f"untriggered_order_id:{order_id}")
-                        while status == "Untriggered":
+                        while self.status == "Untriggered":
                             try:
                                 take_profit = float(
                                     self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
@@ -328,7 +327,7 @@ class MainWindow(QMainWindow):
                                 print(repr(e), e)
                             else:
                                 while take_profit == 0 and take_profit is not None:
-                                    status = self.bot.show_order_status()
+                                    self.status = self.bot.show_order_status()
                                     price = self.bot.get_live_price()
                                     live_price = price + '$'
                                     live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
@@ -364,7 +363,7 @@ class MainWindow(QMainWindow):
                                     #                 print(e)
                                     #             entry_price = 0
 
-                                    if status != "Untriggered":
+                                    if self.status != "Untriggered":
                                         take_profit = float(
                                             self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
                                                 'result'][
@@ -400,9 +399,9 @@ class MainWindow(QMainWindow):
                                                     f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
                                                 break
 
-                        print('\nStop\Take Order was executed!')
-                        status = self.bot.show_order_status()
-                        print(status)
+                        print(f'\nStop-Take Order was executed!')
+                        self.status = self.bot.show_order_status()
+                        print(self.status)
                         try:
                             self.bot.client.Order.Order_cancel(symbol="BTCUSD", order_id=order_id).result()
                         except Exception as e:
@@ -410,15 +409,14 @@ class MainWindow(QMainWindow):
                         else:
                             self.cancel()
                             print('update levels..')
-
                             self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
                             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
-
                             self.arr_l.extend(self.arr_s)
                             self.arr_l = [x for x in self.arr_l if x != 0]
                             print('redraw completed..')
-                            sleep(1)
                             self.create_2()
+                            sleep(3)
+                            self.status = self.bot.show_order_status()
 
             else:
                 self.ui.createButton.setEnabled(True)
@@ -432,8 +430,8 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def stop_process(self):
         if self.is_alive:
-            status = self.bot.show_order_status()
-            if status == "Untriggered" or status == "New":
+            self.status = self.bot.show_order_status()
+            if self.status == "Untriggered" or self.status == "New":
                 self.cancel()
             self.is_alive = False
             self.ui.textBrowser.append('Stop receiving the data')
@@ -583,22 +581,22 @@ class MainWindow(QMainWindow):
         self.ui.w4_3.setText(str(self.arr_s[3]))
         self.ui.w5_3.setText(str(self.arr_s[4]))
 
-        self.ui.textBrowser.append(f"******LONGS******")
-        self.ui.textBrowser.append(f"-150: {self._zone_150}$ --- {found_zone_150}")
-        self.ui.textBrowser.append(f"-100: {self._zone_100}$ --- {found_zone_100}")
-        self.ui.textBrowser.append(f"-75: {self._zone_75}$ --- {found_zone_75}")
-        self.ui.textBrowser.append(f"-50: {self._zone_50}$ --- {found_zone_50}")
-        self.ui.textBrowser.append(f"-25: {self._zone_25}$ --- {found_zone_25}")
-        self.ui.textBrowser.append(f"{self.arr_l}")
-        self.ui.textBrowser.append(f"******SHORTS******")
-        self.ui.textBrowser.append(f"+150: {self.zone_150}$ --- {found_zone_150_}")
-        self.ui.textBrowser.append(f"+100: {self.zone_100}$ --- {found_zone_100_}")
-        self.ui.textBrowser.append(f"+75: {self.zone_75}$ --- {found_zone_75_}")
-        self.ui.textBrowser.append(f"+50: {self.zone_50}$ --- {found_zone_50_}")
-        self.ui.textBrowser.append(f"+25: {self.zone_25}$ --- {found_zone_25_}")
-        self.ui.textBrowser.append(f"{self.arr_s}")
-
-        self.update_scrollbar()
+        # self.ui.textBrowser.append(f"******LONGS******")
+        # self.ui.textBrowser.append(f"-150: {self._zone_150}$ --- {found_zone_150}")
+        # self.ui.textBrowser.append(f"-100: {self._zone_100}$ --- {found_zone_100}")
+        # self.ui.textBrowser.append(f"-75: {self._zone_75}$ --- {found_zone_75}")
+        # self.ui.textBrowser.append(f"-50: {self._zone_50}$ --- {found_zone_50}")
+        # self.ui.textBrowser.append(f"-25: {self._zone_25}$ --- {found_zone_25}")
+        # self.ui.textBrowser.append(f"{self.arr_l}")
+        # self.ui.textBrowser.append(f"******SHORTS******")
+        # self.ui.textBrowser.append(f"+150: {self.zone_150}$ --- {found_zone_150_}")
+        # self.ui.textBrowser.append(f"+100: {self.zone_100}$ --- {found_zone_100_}")
+        # self.ui.textBrowser.append(f"+75: {self.zone_75}$ --- {found_zone_75_}")
+        # self.ui.textBrowser.append(f"+50: {self.zone_50}$ --- {found_zone_50_}")
+        # self.ui.textBrowser.append(f"+25: {self.zone_25}$ --- {found_zone_25_}")
+        # self.ui.textBrowser.append(f"{self.arr_s}")
+        #
+        # self.update_scrollbar()
 
         self.ui.label_10.setText(str(self.POC) + '$')
 
@@ -632,9 +630,9 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def cancel(self):
-        res = self.bot.cancel_orders()
-        self.ui.textBrowser.append(f"{res}")
-        self.update_scrollbar()
+        self.bot.cancel_orders()
+        # self.ui.textBrowser.append(f"{res}")
+        # self.update_scrollbar()
 
 
 if __name__ == "__main__":

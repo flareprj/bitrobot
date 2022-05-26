@@ -309,7 +309,7 @@ class Strategy:
         df = pd.DataFrame(candle)
         drop_list = ['open', 'high', 'low', 'close', 'volume']
         df = df.drop(df.columns.difference(drop_list), axis=1)
-        df = df.astype(np.float)
+        df = df.astype(np.float64)
 
         x = np.linspace(df.close.min(), df.close.max(), len(df))
         kde_factor = 0.1

@@ -15,6 +15,7 @@ class UpdateOrders(TestCase):
                             api_secret=self.api_secret,
                             recv_window=10000)
         self.side = "Buy"
+        self.status = None
         self.timer = 5
         self.interval = "1"
         self.limit = 60
@@ -50,13 +51,12 @@ class UpdateOrders(TestCase):
 
         i = 10
         while i > 0:
-            status = self.bot.show_order_status()
+            self.status = self.bot.show_order_status()
             elapsed_time = self.timer
-            while elapsed_time > 0 and status == "New":
+            while elapsed_time > 0 and self.status == "New":
                 try:
-                    status = self.bot.show_order_status()
-                    #print(f"\rstatus:{status}, elapsed_time: {elapsed_time}sec", end='')
-                    print(f"elapsed_time: {elapsed_time}sec")
+                    self.status = self.bot.show_order_status()
+                    print(f"elapsed_time: {elapsed_time}sec, status:{self.status}")
                     elapsed_time -= 1
                     sleep(1)
                 except Exception as e:
@@ -87,11 +87,12 @@ class UpdateOrders(TestCase):
                                              self._zone_50,
                                              self._zone_25, self.zone_150, self.zone_100,
                                              self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
-
+                    sleep(3)
                 except Exception as e:
                     print(repr(e), e)
                 else:
                     i -= 1
+                    self.status = self.bot.show_order_status()
                     print(f"i:{i}")
 
 
@@ -103,13 +104,11 @@ class ReplaceStopOrder(TestCase):
         self.bot = Strategy(test=False, symbol="BTCUSD", api_key='kENyGGsOnjJuLvIYqQ',
                             api_secret='jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l', app=None)
         self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
-        # self.session = HTTP("https://api-testnet.bybit.com", api_key=self.api_key,
-        #                     api_secret=self.api_secret,
-        #                     recv_window=10000)
         self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
                             api_secret=self.api_secret,
                             recv_window=10000)
         self.side = "Buy"
+        self.status = None
 
     def test_replace_stop_limit(self):
         price = self.data.show_last_price() - 15
@@ -137,14 +136,14 @@ class ReplaceStopOrder(TestCase):
         )
         pprint.pprint(res)
         sleep(5)
-        status = self.bot.show_order_status()
-        while status == "New":
-            status = self.bot.show_order_status()
-            print(f"\r{status}", end='')
+        self.status = self.bot.show_order_status()
+        while self.status == "New":
+            self.status = self.bot.show_order_status()
+            print(f"\r{self.status}", end='')
             sleep(1)
         else:
-            status = self.bot.show_order_status()
-            if status == "Untriggered":
+            self.status = self.bot.show_order_status()
+            if self.status == "Untriggered":
                 sleep(3)
                 try:
                     order_id = self.session.get_conditional_order(
@@ -159,6 +158,8 @@ class ReplaceStopOrder(TestCase):
                             p_r_price=sl+50
                     )
                     pprint.pprint(res)
+                    sleep(3)
+                    self.status = self.bot.show_order_status()
                 except Exception as e:
                     print(e)
 
