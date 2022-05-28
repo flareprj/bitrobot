@@ -91,9 +91,9 @@ class MainWindow(QMainWindow):
 
         self.is_alive = False
 
-        self.ui.api_key.setText('')
-        self.ui.api_secret.setText('')
-        self.ui.lineEdit_3.setText('1')
+        self.ui.api_key.setText('kENyGGsOnjJuLvIYqQ')
+        self.ui.api_secret.setText('jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l')
+        self.ui.lineEdit_3.setText('60')
         self.ui.lineEdit_4.setText('200')
         self.ui.lineEdit_5.setText('20')
         self.ui.lineEdit_6.setText('0.1')
@@ -275,7 +275,7 @@ class MainWindow(QMainWindow):
                                 live_pnl = '0 BTC'
                                 self.ui.label_12.setText(live_price)
                                 self.ui.label_15.setText(live_pnl)
-                                if self.status == "Untriggered":
+                                if self.status == "Untriggered" or not self.is_alive:
                                     break
                                 print(f"\relapsed_time: {elapsed_time}sec", end='')
                                 live_elapsed = str(elapsed_time) + " sec"
@@ -286,7 +286,11 @@ class MainWindow(QMainWindow):
                                 print('\n', e)
                         else:
                             print('\ntimer finished!')
-                            self.update_redraw()
+                            if self.is_alive:
+                                self.update_redraw()
+                            else:
+                                print(f"Stop receiving the data, time:{datetime.now()}")
+                                break
 
                 elif self.status == "Untriggered":
                     print("We have Untriggered order! Cancel another orders!")
@@ -400,8 +404,10 @@ class MainWindow(QMainWindow):
                             print(e)
                         else:
                             self.update_redraw()
-                else:
+                elif self.is_alive:
                     self.update_redraw()
+                else:
+                    break
             else:
                 self.ui.createButton.setEnabled(True)
                 self.ui.cancelButton.setEnabled(True)
@@ -419,6 +425,7 @@ class MainWindow(QMainWindow):
                 self.cancel()
             self.is_alive = False
             self.ui.textBrowser.append('Stop receiving the data')
+            print(f"Stop receiving the data, time:{datetime.now()}")
             self.update_scrollbar()
         if not self.ui.startButton.isEnabled():
             self.ui.startButton.setEnabled(True)
@@ -577,23 +584,6 @@ class MainWindow(QMainWindow):
         self.ui.w4_3.setText(str(self.arr_s[3]))
         self.ui.w5_3.setText(str(self.arr_s[4]))
 
-        # self.ui.textBrowser.append(f"******LONGS******")
-        # self.ui.textBrowser.append(f"-150: {self._zone_150}$ --- {found_zone_150}")
-        # self.ui.textBrowser.append(f"-100: {self._zone_100}$ --- {found_zone_100}")
-        # self.ui.textBrowser.append(f"-75: {self._zone_75}$ --- {found_zone_75}")
-        # self.ui.textBrowser.append(f"-50: {self._zone_50}$ --- {found_zone_50}")
-        # self.ui.textBrowser.append(f"-25: {self._zone_25}$ --- {found_zone_25}")
-        # self.ui.textBrowser.append(f"{self.arr_l}")
-        # self.ui.textBrowser.append(f"******SHORTS******")
-        # self.ui.textBrowser.append(f"+150: {self.zone_150}$ --- {found_zone_150_}")
-        # self.ui.textBrowser.append(f"+100: {self.zone_100}$ --- {found_zone_100_}")
-        # self.ui.textBrowser.append(f"+75: {self.zone_75}$ --- {found_zone_75_}")
-        # self.ui.textBrowser.append(f"+50: {self.zone_50}$ --- {found_zone_50_}")
-        # self.ui.textBrowser.append(f"+25: {self.zone_25}$ --- {found_zone_25_}")
-        # self.ui.textBrowser.append(f"{self.arr_s}")
-        #
-        # self.update_scrollbar()
-
         self.ui.label_10.setText(str(self.POC) + '$')
 
         return self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
@@ -626,9 +616,10 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def cancel(self):
-        self.bot.cancel_orders()
-        # self.ui.textBrowser.append(f"{res}")
-        # self.update_scrollbar()
+        res = self.bot.cancel_orders()
+        if not self.ui.checkAuto.isChecked():
+            self.ui.textBrowser.append(f"{res}")
+            self.update_scrollbar()
 
 
 if __name__ == "__main__":
