@@ -238,6 +238,8 @@ class MainWindow(QMainWindow):
                 self.ui.textBrowser.append(self.balance)
                 return
 
+        self.cancel()
+
         self.is_alive = True
         if self.is_alive:
             self.thread_manager.start(self.get_data)
