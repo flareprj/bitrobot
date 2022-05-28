@@ -107,79 +107,114 @@ class ReplaceStopOrder(TestCase):
         self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
                             api_secret=self.api_secret,
                             recv_window=10000)
-        self.side = "Buy"
+        self.side = None
         self.status = None
 
     def test_replace_stop_limit(self):
-        price = self.data.show_last_price() - 15
-        tp = int(price + 500)
-        sl = int(price - 150)
+        price_l = self.data.show_last_price() - 200
+        price_s = self.data.show_last_price() + 200
 
-        self.session.place_conditional_order(
-            symbol="BTCUSD",
-            order_type="Limit",
-            side="Sell",
-            qty=1,
-            price=sl,
-            base_price=price,
-            stop_px=sl,
-            time_in_force="GoodTillCancel",
-            close_on_trigger=True
-        )
+        tp_l = int(price_l + 200)
+        sl_l = int(price_l - 150)
+
+        tp_s = int(price_s - 200)
+        sl_s = int(price_s + 150)
 
         self.session.place_active_order(
             symbol="BTCUSD",
             side="Buy",
             order_type="Limit",
             qty=1,
-            price=price,
+            price=price_l,
             time_in_force="GoodTillCancel",
-            take_profit=tp,
+            take_profit=tp_l,
         )
 
-        sleep(5)
-
-        order_id = \
-            self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
-                                                  order_status="New").result()[
-                0]['result']['data'][0]['order_id']
-
-        print(order_id)
-
-        self.status = self.session.query_active_order(
+        self.session.place_active_order(
             symbol="BTCUSD",
-            order_id=order_id
-        )['result']['order_status']
+            side="Sell",
+            order_type="Limit",
+            qty=1,
+            price=price_s,
+            time_in_force="GoodTillCancel",
+            take_profit=tp_s,
+        )
+
+        self.session.place_conditional_order(
+            symbol="BTCUSD",
+            order_type="Limit",
+            side="Sell",
+            qty=1,
+            price=sl_l,
+            base_price=price_l,
+            stop_px=sl_l,
+            time_in_force="GoodTillCancel",
+            close_on_trigger=True
+        )
+
+        self.session.place_conditional_order(
+            symbol="BTCUSD",
+            order_type="Limit",
+            side="Buy",
+            qty=1,
+            price=sl_s,
+            base_price=price_s,
+            stop_px=sl_s,
+            time_in_force="GoodTillCancel",
+            close_on_trigger=True
+        )
 
         while self.status == "New":
-            self.status = self.session.query_active_order(
-                symbol="BTCUSD",
-                order_id=order_id
-            )['result']['order_status']
-
             print(f"{self.status}")
             sleep(1)
         else:
-            self.status = self.session.get_active_order(
+            self.side = self.session.get_active_order(
                 symbol="BTCUSD",
-                order_status="New"
-            )['result']['data'][0]['order_status']
+                order_status="Filled,New"
+            )['result']['order_side']
+            print(self.side)
 
-            if self.status == "Filled":
-                try:
-                    order_id = self.session.get_conditional_order(
-                        symbol="BTCUSD"
-                    )['result']['data'][0]['stop_order_id']
-                    print(order_id)
-                    res = self.session.replace_conditional_order(
-                        symbol="BTCUSD",
-                        stop_order_id=str(order_id),
-                        p_r_trigger_price=sl + 75
-                    )
-                    pprint.pprint(res)
-                    self.status = self.bot.show_order_status()
-                except Exception as e:
-                    print(e)
+            self.session.get_conditional_order(
+                symbol="BTCUSD",
+                stop_order_status="Untriggered"
+            )
+
+            # if self.side == "Buy" and price >= trigger_trailing - 50:
+            #     p_r_trigger_price = entry_price + 25
+            #
+            # elif self.side == "Sell" and price <= trigger_trailing + 50:
+            #     p_r_trigger_price = entry_price - 25
+            #
+            # if self.status == "Filled":
+            #     try:
+            #         order_id = self.session.get_conditional_order(
+            #             symbol="BTCUSD"
+            #         )['result']['data'][0]['stop_order_id']
+            #         print(order_id)
+            #         res = self.session.replace_conditional_order(
+            #             symbol="BTCUSD",
+            #             stop_order_id=str(order_id),
+            #             p_r_trigger_price=p_r_trigger_price
+            #         )
+            #         pprint.pprint(res)
+            #         self.status = self.bot.show_order_status()
+            #     except Exception as e:
+            #         print(e)
+
+
+        # order_long_id = \
+        #     self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
+        #                                           order_status="New").result()[
+        #         0]['result']['data'][0]['order_id']
+        # order_short_id = \
+        #     self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
+        #                                           order_status="New").result()[
+        #         0]['result']['data'][0]['order_id']
+        #
+        # print(order_long_id)
+        # print(order_short_id)
+
+
 
 
 class LimitOrder(TestCase):

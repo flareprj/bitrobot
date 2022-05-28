@@ -91,8 +91,8 @@ class MainWindow(QMainWindow):
 
         self.is_alive = False
 
-        self.ui.api_key.setText('kENyGGsOnjJuLvIYqQ')
-        self.ui.api_secret.setText('jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l')
+        self.ui.api_key.setText('')
+        self.ui.api_secret.setText('')
         self.ui.lineEdit_3.setText('60')
         self.ui.lineEdit_4.setText('200')
         self.ui.lineEdit_5.setText('20')
