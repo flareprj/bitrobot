@@ -6,8 +6,8 @@ class Create2Order(TestCase):
 
     def setUp(self) -> None:
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
-        self.api_key = 'kENyGGsOnjJuLvIYqQ'
-        self.api_secret = 'jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l'
+        self.api_key = ''
+        self.api_secret = ''
         self.bot = Strategy(test=False, symbol="BTCUSD", api_key=self.api_key,
                             api_secret=self.api_secret, app=None)
         self.balance = self.bot.data.available_balance()

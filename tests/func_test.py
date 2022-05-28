@@ -99,8 +99,8 @@ class UpdateOrders(TestCase):
 class ReplaceStopOrder(TestCase):
     def setUp(self) -> None:
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
-        self.api_key = 'kENyGGsOnjJuLvIYqQ'
-        self.api_secret = 'jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l'
+        self.api_key = ''
+        self.api_secret = ''
         self.bot = Strategy(test=False, symbol="BTCUSD", api_key='kENyGGsOnjJuLvIYqQ',
                             api_secret='jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l', app=None)
         self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
