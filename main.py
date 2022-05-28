@@ -1,4 +1,4 @@
-#import pprint
+# import pprint
 import sys
 
 from pybit.inverse_perpetual import HTTP
@@ -193,6 +193,9 @@ class MainWindow(QMainWindow):
         else:
             self.ui.startButton.setEnabled(False)
 
+        self.ui.textBrowser.clear()
+        self.ui.textBrowser.append(f"Start.. time:{datetime.now()}")
+        print(f"Start.. time:{datetime.now()}")
         self.ui.textBrowser.append('connecting..')
         self.bot = Strategy(self.radio, "BTCUSD", self.api_key, self.api_secret, MainWindow)
 
@@ -234,8 +237,6 @@ class MainWindow(QMainWindow):
             else:
                 self.ui.textBrowser.append(self.balance)
                 return
-
-        print(f"Start.. time:{datetime.now()}")
 
         self.is_alive = True
         if self.is_alive:
@@ -404,10 +405,10 @@ class MainWindow(QMainWindow):
                             print(e)
                         else:
                             self.update_redraw()
-                elif self.is_alive:
-                    self.update_redraw()
-                else:
+                elif not self.is_alive:
                     break
+                else:
+                    self.update_redraw()
             else:
                 self.ui.createButton.setEnabled(True)
                 self.ui.cancelButton.setEnabled(True)
@@ -422,9 +423,10 @@ class MainWindow(QMainWindow):
         if self.is_alive:
             self.status = self.bot.show_order_status()
             if self.status == "Untriggered" or self.status == "New":
-                self.cancel()
+                res = self.cancel()
+                self.ui.textBrowser.append(f'{res}')
             self.is_alive = False
-            self.ui.textBrowser.append('Stop receiving the data')
+            self.ui.textBrowser.append(f"Stop receiving the data, time:{datetime.now()}")
             print(f"Stop receiving the data, time:{datetime.now()}")
             self.update_scrollbar()
         if not self.ui.startButton.isEnabled():
@@ -486,8 +488,8 @@ class MainWindow(QMainWindow):
         self.canvas.draw()
 
         _, _, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
-                                                                     self.limit,
-                                                                     self.percents, self.order_weights)
+                                                   self.limit,
+                                                   self.percents, self.order_weights)
 
         deposit = int(count_deposit(self.price, self.balance, self.leverage, self.percents))
 
@@ -620,7 +622,7 @@ class MainWindow(QMainWindow):
         if not self.ui.checkAuto.isChecked():
             self.ui.textBrowser.append(f"{res}")
             self.update_scrollbar()
-
+        return res
 
 if __name__ == "__main__":
     app = QApplication([])

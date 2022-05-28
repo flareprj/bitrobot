@@ -114,16 +114,8 @@ class ReplaceStopOrder(TestCase):
         price = self.data.show_last_price() - 15
         tp = int(price + 500)
         sl = int(price - 150)
-        self.session.place_active_order(
-            symbol="BTCUSD",
-            side="Buy",
-            order_type="Limit",
-            qty=1,
-            price=price,
-            time_in_force="GoodTillCancel",
-            take_profit=tp,
-        )
-        res = self.session.place_conditional_order(
+
+        self.session.place_conditional_order(
             symbol="BTCUSD",
             order_type="Limit",
             side="Sell",
@@ -134,31 +126,57 @@ class ReplaceStopOrder(TestCase):
             time_in_force="GoodTillCancel",
             close_on_trigger=True
         )
-        pprint.pprint(res)
+
+        self.session.place_active_order(
+            symbol="BTCUSD",
+            side="Buy",
+            order_type="Limit",
+            qty=1,
+            price=price,
+            time_in_force="GoodTillCancel",
+            take_profit=tp,
+        )
+
         sleep(5)
-        self.status = self.bot.show_order_status()
+
+        order_id = \
+            self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
+                                                  order_status="New").result()[
+                0]['result']['data'][0]['order_id']
+
+        print(order_id)
+
+        self.status = self.session.query_active_order(
+            symbol="BTCUSD",
+            order_id=order_id
+        )['result']['order_status']
+
         while self.status == "New":
-            self.status = self.bot.show_order_status()
-            print(f"\r{self.status}", end='')
+            self.status = self.session.query_active_order(
+                symbol="BTCUSD",
+                order_id=order_id
+            )['result']['order_status']
+
+            print(f"{self.status}")
             sleep(1)
         else:
-            self.status = self.bot.show_order_status()
-            if self.status == "Untriggered":
-                sleep(3)
+            self.status = self.session.get_active_order(
+                symbol="BTCUSD",
+                order_status="New"
+            )['result']['data'][0]['order_status']
+
+            if self.status == "Filled":
                 try:
                     order_id = self.session.get_conditional_order(
-                            symbol="BTCUSD"
-                     )['result']['data'][0]['stop_order_id']
+                        symbol="BTCUSD"
+                    )['result']['data'][0]['stop_order_id']
                     print(order_id)
-                    sleep(3)
-
                     res = self.session.replace_conditional_order(
-                            symbol="BTCUSD",
-                            stop_order_id=str(order_id),
-                            p_r_price=sl+50
+                        symbol="BTCUSD",
+                        stop_order_id=str(order_id),
+                        p_r_trigger_price=sl + 75
                     )
                     pprint.pprint(res)
-                    sleep(3)
                     self.status = self.bot.show_order_status()
                 except Exception as e:
                     print(e)
