@@ -101,8 +101,8 @@ class ReplaceStopOrder(TestCase):
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
         self.api_key = ''
         self.api_secret = ''
-        self.bot = Strategy(test=False, symbol="BTCUSD", api_key='kENyGGsOnjJuLvIYqQ',
-                            api_secret='jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l', app=None)
+        self.bot = Strategy(test=False, symbol="BTCUSD", api_key='',
+                            api_secret='', app=None)
         self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
         self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
                             api_secret=self.api_secret,
@@ -178,43 +178,6 @@ class ReplaceStopOrder(TestCase):
                 symbol="BTCUSD",
                 stop_order_status="Untriggered"
             )
-
-            # if self.side == "Buy" and price >= trigger_trailing - 50:
-            #     p_r_trigger_price = entry_price + 25
-            #
-            # elif self.side == "Sell" and price <= trigger_trailing + 50:
-            #     p_r_trigger_price = entry_price - 25
-            #
-            # if self.status == "Filled":
-            #     try:
-            #         order_id = self.session.get_conditional_order(
-            #             symbol="BTCUSD"
-            #         )['result']['data'][0]['stop_order_id']
-            #         print(order_id)
-            #         res = self.session.replace_conditional_order(
-            #             symbol="BTCUSD",
-            #             stop_order_id=str(order_id),
-            #             p_r_trigger_price=p_r_trigger_price
-            #         )
-            #         pprint.pprint(res)
-            #         self.status = self.bot.show_order_status()
-            #     except Exception as e:
-            #         print(e)
-
-
-        # order_long_id = \
-        #     self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
-        #                                           order_status="New").result()[
-        #         0]['result']['data'][0]['order_id']
-        # order_short_id = \
-        #     self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
-        #                                           order_status="New").result()[
-        #         0]['result']['data'][0]['order_id']
-        #
-        # print(order_long_id)
-        # print(order_short_id)
-
-
 
 
 class LimitOrder(TestCase):

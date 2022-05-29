@@ -1,4 +1,3 @@
-# import pprint
 import sys
 
 from pybit.inverse_perpetual import HTTP
@@ -159,7 +158,6 @@ class MainWindow(QMainWindow):
         check_tf = self.ui.lineEdit_3.text()
         check_limit = self.ui.lineEdit_4.text()
 
-        # TEST OR MAIN?
         if not self.full_version:
             if self.radio:
                 if check_tf not in list_tf_test:
@@ -212,7 +210,6 @@ class MainWindow(QMainWindow):
         self.balance = self.bot.data.available_balance()
         self.leverage = int(self.ui.lineEdit_5.text())
 
-        # если вместо баланса получили код ошибки - выводим его в лог, далее программа останавливается
         if isinstance(self.balance, str):
             self.ui.textBrowser.append(self.balance)
             return
@@ -333,34 +330,6 @@ class MainWindow(QMainWindow):
                                     self.ui.label_12.setText(live_price)
                                     self.ui.label_15.setText(live_pnl)
                                     print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
-
-                                    # TODO при достижении цены выше\ниже условного трейдинга, переносить стоп в б\у
-
-                                    # if entry_price != 0:
-                                    #     if side == "Buy":
-                                    #         price = float(self.bot.get_live_price())
-                                    #         if price > entry_price + 50:
-                                    #             moment = int(entry_price + 25)
-                                    #             print(f"\nreplace buy-stop! price:{price}, moment:{moment}")
-                                    #             try:
-                                    #                 res = self.session.replace_active_order(symbol="BTCUSD", order_id=order_id,
-                                    #                                              stop_loss=moment).result()
-                                    #                 pprint.pprint(res)
-                                    #             except Exception as e:
-                                    #                 print(e)
-                                    #             entry_price = 0
-                                    #     elif side == "Sell":
-                                    #         price = float(self.bot.get_live_price())
-                                    #         if price < entry_price - 50:
-                                    #             moment = int(entry_price - 25)
-                                    #             print(f"\nreplace sell-stop! price:{price}, moment:{moment}")
-                                    #             try:
-                                    #                 res = self.session.replace_active_order(symbol="BTCUSD", order_id=order_id,
-                                    #                                              stop_loss=moment).result()
-                                    #                 pprint.pprint(res)
-                                    #             except Exception as e:
-                                    #                 print(e)
-                                    #             entry_price = 0
 
                                     if self.status != "Untriggered":
                                         take_profit = float(
@@ -625,6 +594,7 @@ class MainWindow(QMainWindow):
             self.ui.textBrowser.append(f"{res}")
             self.update_scrollbar()
         return res
+
 
 if __name__ == "__main__":
     app = QApplication([])

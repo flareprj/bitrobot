@@ -53,7 +53,6 @@ def fills(deposit, qty_l, qty_s, orders_weights):
 
 
 def calc_orders(deposit, qty_l, qty_s, orders_weights):
-    # list_max = [0.1, 0.19, 0.3, 0.45, 1]
     list_max = orders_weights
     deposit_s = deposit
 
@@ -69,26 +68,20 @@ def calc_orders(deposit, qty_l, qty_s, orders_weights):
             break
         arr_l.append(round((list_max[i]), 2))
 
-    #print('qty_longs:', arr_l)
     i = 0
     sum = 0
     while deposit > 0 and i < qty_l:
         if i == qty_l - 1:
             item = int(deposit * arr_l[len(arr_l) - 1])
             result_l.append(item)
-            #print(f"item{i}:                {item}")
             sum += item
             break
         else:
             item = int(deposit * arr_l[i])
             result_l.append(item)
-            #print(f"item{i}:                {item}")
             deposit -= item
             i += 1
             sum += item
-
-    # print('--------')
-    # print(f"sum:{sum}")
 
     for i in range(qty_s):
         if i == qty_s - 1:
@@ -96,29 +89,23 @@ def calc_orders(deposit, qty_l, qty_s, orders_weights):
             break
         arr_s.append(round((list_max[i]), 2))
 
-    #print('qty_shorts:', arr_s)
     i = 0
     sum = 0
     while deposit_s > 0 and i < qty_s:
         if i == qty_s - 1:
             item = int(deposit_s * arr_s[len(arr_s) - 1])
             result_s.append(item)
-            #print(f"item{i}:                {item}")
             sum += item
             break
         else:
             item = int(deposit_s * arr_s[i])
             result_s.append(item)
-            #print(f"item{i}:                {item}")
             deposit_s -= item
             i += 1
             sum += item
 
-    #print('--------')
-
     for i in range(0, 5, 1):
         try:
-            #print(result_l[i])
             pass
         except IndexError:
             result_l.append(0)
@@ -133,7 +120,6 @@ def calc_orders(deposit, qty_l, qty_s, orders_weights):
 
     for i in range(0, 5, 1):
         try:
-            # print(result_s[i])
             pass
         except IndexError:
             result_s.append(0)
