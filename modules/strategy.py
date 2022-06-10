@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from scipy import stats, signal
 import csv
+import pathlib
 from modules.functions import *
 from modules.orders_calc import *
 from modules.exceptions import *
@@ -284,8 +285,16 @@ class Strategy:
                 timeout=10,
                 headers={'User-Agent': 'some cool user-agent'})
         except requests.exceptions.RequestException as e:
-            print(f"requests error! {e}")
-            raise SystemExit(e)
+            path = pathlib.Path('margin.csv')
+            if path.exists() and path.is_file():
+                with open('margin.csv') as csvfile:
+                    spamreader = csv.reader(csvfile, delimiter=',')
+                    for c, row in enumerate(spamreader):
+                        if c == 1:
+                            return int(row[6])
+            else:
+                print(f'path.exists():{path.exists()}, path.is_file():{path.is_file()}, {e}')
+                raise SystemExit(e)
         else:
             url_content = csv_url.content
             csv_file = open('margin.csv', 'wb')
