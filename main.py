@@ -90,8 +90,8 @@ class MainWindow(QMainWindow):
 
         self.is_alive = False
 
-        self.ui.api_key.setText('')
-        self.ui.api_secret.setText('')
+        self.ui.api_key.setText('qwgV06Je2in5PICYGW')
+        self.ui.api_secret.setText('vcflzZbd3PfnXxYD30x8Yj6XJ2l9ndq4bcrP')
         self.ui.lineEdit_3.setText('60')
         self.ui.lineEdit_4.setText('200')
         self.ui.lineEdit_5.setText('20')
@@ -199,12 +199,10 @@ class MainWindow(QMainWindow):
 
         if self.radio:
             self.session = HTTP("https://api-testnet.bybit.com", api_key=self.api_key,
-                                api_secret=self.api_secret,
-                                recv_window=10000)
+                                api_secret=self.api_secret)
         else:
             self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
-                                api_secret=self.api_secret,
-                                recv_window=10000)
+                                api_secret=self.api_secret)
 
         self.ui.textBrowser.append(f"get available balance..")
         self.balance = self.bot.data.available_balance()
@@ -264,7 +262,7 @@ class MainWindow(QMainWindow):
             if self.ui.checkAuto.isChecked():
                 self.status = self.bot.show_order_status()
                 print(f'\ncurrent_status: {self.status}')
-                sleep(5)
+                #sleep(1)
                 if self.status == "New":
                     while self.status == "New":
                         elapsed_time = self.timer
@@ -354,7 +352,7 @@ class MainWindow(QMainWindow):
                                     active_pos = self.session.my_position(symbol="BTCUSD")['result']['size']
                                     if active_pos != 0 and active_pos is not None:
                                         try:
-                                            sleep(1)
+                                            #sleep(1)
                                             self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
                                                                           trailing_stop=self.trailing_stop,
                                                                           new_trailing_active=trigger_trailing)
@@ -412,7 +410,7 @@ class MainWindow(QMainWindow):
         self.arr_l = [x for x in self.arr_l if x != 0]
         print('redraw completed..')
         self.create_2()
-        sleep(3)
+        #sleep(3)
         self.status = self.bot.show_order_status()
 
     def qty_calc(self):
