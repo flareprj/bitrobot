@@ -90,8 +90,8 @@ class MainWindow(QMainWindow):
 
         self.is_alive = False
 
-        self.ui.api_key.setText('qwgV06Je2in5PICYGW')
-        self.ui.api_secret.setText('vcflzZbd3PfnXxYD30x8Yj6XJ2l9ndq4bcrP')
+        self.ui.api_key.setText('')
+        self.ui.api_secret.setText('')
         self.ui.lineEdit_3.setText('60')
         self.ui.lineEdit_4.setText('200')
         self.ui.lineEdit_5.setText('20')
@@ -145,8 +145,6 @@ class MainWindow(QMainWindow):
             self.ui.textBrowser.append(f"Api keys is empty")
             return
 
-        allow_limit = [str(i) for i in range(5, 201, 1)]
-
         if self.ui.test_rb.isChecked():
             self.radio = True
         else:
@@ -170,9 +168,15 @@ class MainWindow(QMainWindow):
                     f"Incorrect timeframe")
                 return
 
-        if check_limit not in allow_limit:
-            self.ui.textBrowser.append(f"The number of candles must be at least 5")
+        try:
+            check_limit = int(check_limit)
+        except ValueError as e:
+            self.ui.textBrowser.append(f"Candle limit value error! {e}")
             return
+        else:
+            if check_limit > 200 or check_limit < 5:
+                self.ui.textBrowser.append(f"The number of candles must be 5-200")
+                return
 
         try:
             int(self.ui.lineEdit_5.text())
@@ -262,7 +266,7 @@ class MainWindow(QMainWindow):
             if self.ui.checkAuto.isChecked():
                 self.status = self.bot.show_order_status()
                 print(f'\ncurrent_status: {self.status}')
-                #sleep(1)
+                # sleep(1)
                 if self.status == "New":
                     while self.status == "New":
                         elapsed_time = self.timer
@@ -283,7 +287,7 @@ class MainWindow(QMainWindow):
                             except Exception as e:
                                 print('\n', e)
                         else:
-                            print('\ntimer finished!')
+                            print(f'\ntimer finished! status:{self.status}')
                             if self.is_alive:
                                 self.update_redraw()
                             else:
@@ -352,7 +356,7 @@ class MainWindow(QMainWindow):
                                     active_pos = self.session.my_position(symbol="BTCUSD")['result']['size']
                                     if active_pos != 0 and active_pos is not None:
                                         try:
-                                            #sleep(1)
+                                            # sleep(1)
                                             self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
                                                                           trailing_stop=self.trailing_stop,
                                                                           new_trailing_active=trigger_trailing)
@@ -376,6 +380,13 @@ class MainWindow(QMainWindow):
                             self.update_redraw()
                 elif not self.is_alive:
                     break
+                elif self.ui.checkAuto and (self.status == 'Cancelled' or self.status == 'Deactivated' or self.status == 'Filled'):
+                    while self.status != "New":
+                        sleep(1)
+                        print(f"waiting.. status:{self.status}")
+                        self.status = self.bot.show_order_status()
+                    else:
+                        print(f"return.. status:{self.status}")
                 else:
                     self.update_redraw()
             else:
@@ -410,7 +421,7 @@ class MainWindow(QMainWindow):
         self.arr_l = [x for x in self.arr_l if x != 0]
         print('redraw completed..')
         self.create_2()
-        #sleep(3)
+        # sleep(3)
         self.status = self.bot.show_order_status()
 
     def qty_calc(self):
