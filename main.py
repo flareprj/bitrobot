@@ -275,6 +275,12 @@ class MainWindow(QMainWindow):
                         while elapsed_time > 0 and self.status == "New":
                             try:
                                 self.status = self.bot.show_order_status()
+                                if self.status is None:
+                                    while self.status is None:
+                                        self.status = self.bot.show_order_status()
+                                        print(f'current_status: {self.status}, try again..')
+                                        logger.info(f'current_status: {self.status}, try again..')
+                                        sleep_()
                                 live_price = self.bot.get_live_price() + '$'
                                 live_pnl = '0 BTC'
                                 self.ui.label_12.setText(live_price)
@@ -288,7 +294,7 @@ class MainWindow(QMainWindow):
                                 sleep(1)
                             except Exception as e:
                                 print('\n', e)
-                                logger.warning(f'\n {e}')
+                                logger.exception(f'{e}', exc_info=True)
                         else:
                             print(f'\ntimer finished! status:{self.status}')
                             logger.info(f'timer finished! status:{self.status}')
@@ -328,8 +334,8 @@ class MainWindow(QMainWindow):
                                 print(f"last_price: {last_price}")
                                 print(f"entry_price: {entry_price}")
                                 print(f"side: {side}")
-                                logger.info(f"take_profit:{take_profit}\n last_price:{last_price}\n entry_price:{entry_price}\n"
-                                            f"side:{side}")
+                                logger.info(
+                                    f"take_profit:{take_profit}, last_price:{last_price}, entry_price:{entry_price}, side:{side}")
                             except Exception as e:
                                 print(repr(e), e)
                                 logger.exception(repr(e), e, exc_info=True)
@@ -343,7 +349,7 @@ class MainWindow(QMainWindow):
                                     self.ui.label_15.setText(live_pnl)
                                     print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
 
-                                    if self.status != "Untriggered":
+                                    if self.status == "Filled":
                                         take_profit = float(
                                             self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
                                                 'result'][
@@ -386,7 +392,7 @@ class MainWindow(QMainWindow):
                         logger.info(f'Stop-Take Order was executed!')
                         self.status = self.bot.show_order_status()
                         print(self.status)
-                        logger.info(f"{self.status} time:{datetime.now()}")
+                        logger.info(f"{self.status}")
                         try:
                             self.bot.client.Order.Order_cancel(symbol="BTCUSD", order_id=order_id).result()
                         except Exception as e:
@@ -396,12 +402,15 @@ class MainWindow(QMainWindow):
                             self.update_redraw()
                 elif not self.is_alive:
                     break
-                elif self.ui.checkAuto and (self.status == 'Cancelled' or self.status == 'Deactivated' or self.status == 'Filled'):
+                elif self.ui.checkAuto and (
+                        self.status == 'Cancelled' or self.status == 'Deactivated' or self.status == 'Filled'):
                     while self.status != "New":
                         sleep(1)
                         print(f"waiting.. status:{self.status}")
                         logger.info(f"waiting.. status:{self.status}")
                         self.status = self.bot.show_order_status()
+                        if self.status == "Untriggered":
+                            break
                     else:
                         print(f"return.. status:{self.status}")
                         logger.info(f"return.. status:{self.status}")
@@ -633,4 +642,3 @@ if __name__ == "__main__":
     application.show()
 
     sys.exit(app.exec())
-

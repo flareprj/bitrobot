@@ -38,8 +38,7 @@ class Strategy:
 
     def show_order_status(self):
         try:
-            result = self.client.Order.Order_getOrders(symbol=self.symbol).result()[0]['result']['data'][0][
-                'order_status']
+            result = self.client.Order.Order_getOrders(symbol=self.symbol).result()[0]['result']['data'][0]['order_status']
         except Exception as e:
             print(e)
             logger.exception(f"{e}", exc_info=True)
