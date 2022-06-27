@@ -52,9 +52,8 @@ def fills(deposit, qty_l, qty_s, orders_weights):
     return res1, res2
 
 
-def calc_orders(deposit, qty_l, qty_s, orders_weights):
-    list_max = orders_weights
-    deposit_s = deposit
+def calc_orders(deposit, qty_l, qty_s, list_max):
+    deposit_save = deposit
 
     arr_l = []
     arr_s = []
@@ -63,46 +62,31 @@ def calc_orders(deposit, qty_l, qty_s, orders_weights):
     result_s = []
 
     for i in range(qty_l):
-        if i == qty_l - 1:
-            arr_l.append(round(list_max[len(list_max) - 1], 2))
-            break
-        arr_l.append(round((list_max[i]), 2))
+        arr_l.append(list_max[i])
 
     i = 0
-    sum = 0
     while deposit > 0 and i < qty_l:
-        if i == qty_l - 1:
-            item = int(deposit * arr_l[len(arr_l) - 1])
-            result_l.append(item)
-            sum += item
-            break
-        else:
-            item = int(deposit * arr_l[i])
-            result_l.append(item)
-            deposit -= item
-            i += 1
-            sum += item
+        item = int(deposit * arr_l[i])
+        result_l.append(item)
+        deposit -= item
+        i += 1
 
     for i in range(qty_s):
-        if i == qty_s - 1:
-            arr_s.append(round(list_max[len(list_max) - 1], 2))
-            break
-        arr_s.append(round((list_max[i]), 2))
+        arr_s.append(list_max[i])
 
     i = 0
-    sum = 0
-    while deposit_s > 0 and i < qty_s:
-        if i == qty_s - 1:
-            item = int(deposit_s * arr_s[len(arr_s) - 1])
-            result_s.append(item)
-            sum += item
-            break
-        else:
-            item = int(deposit_s * arr_s[i])
-            result_s.append(item)
-            deposit_s -= item
-            i += 1
-            sum += item
+    while deposit_save > 0 and i < qty_s:
+        item = int(deposit_save * arr_s[i])
+        result_s.append(item)
+        deposit_save -= item
+        i += 1
+
+    # *****************************************************************
+    ''''
+    Block for move founded contracts to end list and insert '0' values
+    before - [10, 0, 0] [10, 0, 0, 40, 50]
+    after - [0, 0, 10] [0, 0, 10, 40, 50]
+    '''
 
     for i in range(0, 5, 1):
         try:
@@ -138,9 +122,8 @@ def calc_orders(deposit, qty_l, qty_s, orders_weights):
 if __name__ == "__main__":
     deposit = 100
     orders_weights = [0.1, 0.19, 0.3, 0.45, 1]
-    print(calc_orders(deposit, 5, 5, orders_weights))
 
-    orders_weights = [0.1, 0, 0, 0, 0]
-    print(calc_orders(deposit, 5, 5, orders_weights))
+    # orders_weights = [0.1, 0, 0, 0, 0]
+    # print(calc_orders(deposit, 5, 5, orders_weights))
 
 

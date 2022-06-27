@@ -1,5 +1,5 @@
-import configparser
 import logging
+from datetime import datetime
 
 
 class MegaHandler(logging.Handler):
@@ -32,7 +32,7 @@ logger_config = {
         'file': {
             '()': MegaHandler,
             'level': 'DEBUG',
-            'filename': 'debug.log',
+            'filename': f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log',
             'formatter': 'std_format'
         }
     },
@@ -48,17 +48,3 @@ logger_config = {
     # 'root': {}   # '': {}
     # 'incremental': True
 }
-
-
-class Settings:
-    def __init__(self, filename):
-        self.config = configparser.ConfigParser()
-        self.config.read(filename)
-
-        self.api_key = self.config["Keys"]["api_key"]
-        self.secret_key = self.config["Keys"]["secret_key"]
-        self.symbol = self.config["Parameters"]["symbol"]
-        self.strategy = self.config["Parameters"]["strategy"]
-
-    def update(self, name):
-        self.config.set("Parameters", "strategy", name)

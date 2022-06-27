@@ -90,8 +90,8 @@ class MainWindow(QMainWindow):
 
         self.is_alive = False
 
-        self.ui.api_key.setText('')
-        self.ui.api_secret.setText('')
+        self.ui.api_key.setText('qwZENih1NkKLge7kZX')
+        self.ui.api_secret.setText('ptnypkd2W3DfiB82RX1wQUi9ThQSgvPqiCBh')
         self.ui.lineEdit_3.setText('60')
         self.ui.lineEdit_4.setText('200')
         self.ui.lineEdit_5.setText('20')
@@ -198,6 +198,8 @@ class MainWindow(QMainWindow):
         self.ui.textBrowser.clear()
         self.ui.textBrowser.append(f"Start.. time:{datetime.now()}")
         print(f"Start.. time:{datetime.now()}")
+        logger.info(f"Start..")
+
         self.ui.textBrowser.append('connecting..')
         self.bot = Strategy(self.radio, "BTCUSD", self.api_key, self.api_secret, MainWindow)
 
@@ -265,8 +267,8 @@ class MainWindow(QMainWindow):
         while self.is_alive:
             if self.ui.checkAuto.isChecked():
                 self.status = self.bot.show_order_status()
-                print(f'\ncurrent_status: {self.status}')
-                # sleep(1)
+                print(f'current_status: {self.status}')
+                logger.info(f'current_status: {self.status}')
                 if self.status == "New":
                     while self.status == "New":
                         elapsed_time = self.timer
@@ -286,16 +288,20 @@ class MainWindow(QMainWindow):
                                 sleep(1)
                             except Exception as e:
                                 print('\n', e)
+                                logger.warning(f'\n {e}')
                         else:
                             print(f'\ntimer finished! status:{self.status}')
+                            logger.info(f'timer finished! status:{self.status}')
                             if self.is_alive:
                                 self.update_redraw()
                             else:
                                 print(f"Stop receiving the data, time:{datetime.now()}")
+                                logger.info(f"Stop receiving the data")
                                 break
 
                 elif self.status == "Untriggered":
                     print("We have Untriggered order! Cancel another orders!")
+                    logger.info(f"We have Untriggered order! Cancel another orders!")
                     self.cancel()
                     self.status = self.bot.show_order_status()
                     try:
@@ -305,8 +311,10 @@ class MainWindow(QMainWindow):
                                 0]['result']['data'][0]['order_id']
                     except Exception as e:
                         print(e)
+                        logger.exception(e, exc_info=True)
                     else:
                         print(f"untriggered_order_id:{order_id}")
+                        logger.info(f"untriggered_order_id:{order_id}")
                         while self.status == "Untriggered":
                             try:
                                 take_profit = float(
@@ -320,9 +328,11 @@ class MainWindow(QMainWindow):
                                 print(f"last_price: {last_price}")
                                 print(f"entry_price: {entry_price}")
                                 print(f"side: {side}")
-
+                                logger.info(f"take_profit:{take_profit}\n last_price:{last_price}\n entry_price:{entry_price}\n"
+                                            f"side:{side}")
                             except Exception as e:
                                 print(repr(e), e)
+                                logger.exception(repr(e), e, exc_info=True)
                             else:
                                 while take_profit == 0 and take_profit is not None:
                                     self.status = self.bot.show_order_status()
@@ -346,9 +356,11 @@ class MainWindow(QMainWindow):
                                 if take_profit > entry_price != 0 and take_profit != 0:
                                     trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
                                     print(f"trigger_trailing: {trigger_trailing}$")
+                                    logger.info(f"trigger_trailing: {trigger_trailing}$")
                                 elif take_profit < entry_price != 0 and take_profit != 0:
                                     trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
                                     print(f"trigger_trailing: {trigger_trailing}$")
+                                    logger.info(f"trigger_trailing: {trigger_trailing}$")
                                 else:
                                     break
 
@@ -356,26 +368,30 @@ class MainWindow(QMainWindow):
                                     active_pos = self.session.my_position(symbol="BTCUSD")['result']['size']
                                     if active_pos != 0 and active_pos is not None:
                                         try:
-                                            # sleep(1)
                                             self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
                                                                           trailing_stop=self.trailing_stop,
                                                                           new_trailing_active=trigger_trailing)
                                         except Exception as e:
                                             print(e)
+                                            logger.exception(f"{e}", exc_info=True)
                                         else:
                                             if float(self.session.my_position(symbol="BTCUSD")['result'][
                                                          'trailing_stop']) != '0':
                                                 print(
                                                     f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
+                                                logger.info(f"placing a trailing-stop: {trigger_trailing}$ - ok!")
                                                 break
 
                         print(f'\nStop-Take Order was executed!')
+                        logger.info(f'Stop-Take Order was executed!')
                         self.status = self.bot.show_order_status()
                         print(self.status)
+                        logger.info(f"{self.status} time:{datetime.now()}")
                         try:
                             self.bot.client.Order.Order_cancel(symbol="BTCUSD", order_id=order_id).result()
                         except Exception as e:
                             print(e)
+                            logger.exception(f"{e}", exc_info=True)
                         else:
                             self.update_redraw()
                 elif not self.is_alive:
@@ -384,9 +400,11 @@ class MainWindow(QMainWindow):
                     while self.status != "New":
                         sleep(1)
                         print(f"waiting.. status:{self.status}")
+                        logger.info(f"waiting.. status:{self.status}")
                         self.status = self.bot.show_order_status()
                     else:
                         print(f"return.. status:{self.status}")
+                        logger.info(f"return.. status:{self.status}")
                 else:
                     self.update_redraw()
             else:
@@ -408,6 +426,7 @@ class MainWindow(QMainWindow):
             self.is_alive = False
             self.ui.textBrowser.append(f"Stop receiving the data, time:{datetime.now()}")
             print(f"Stop receiving the data, time:{datetime.now()}")
+            logger.info(f"Stop receiving the data")
             self.update_scrollbar()
         if not self.ui.startButton.isEnabled():
             self.ui.startButton.setEnabled(True)
@@ -415,13 +434,14 @@ class MainWindow(QMainWindow):
     def update_redraw(self):
         self.cancel()
         print('update levels..')
+        logger.info(f'update levels..')
         self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
         self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
         self.arr_l.extend(self.arr_s)
         self.arr_l = [x for x in self.arr_l if x != 0]
         print('redraw completed..')
+        logger.info(f'redraw completed..')
         self.create_2()
-        # sleep(3)
         self.status = self.bot.show_order_status()
 
     def qty_calc(self):
@@ -595,6 +615,7 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             print(repr(e), e)
+            logger.exception(repr(e), e, exc_info=True)
 
     @pyqtSlot()
     def cancel(self):
@@ -612,3 +633,4 @@ if __name__ == "__main__":
     application.show()
 
     sys.exit(app.exec())
+

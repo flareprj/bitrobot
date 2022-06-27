@@ -67,6 +67,7 @@ class Endpoints:
         fees = 1 - (0.00075 * 2)
         print(f"fees:{fees}")
         print(f"contracts:{int(price * available_balance * leverage * percent * fees)}")
+        logger.info(f"counting contracts..\nfees:{fees}\ncontracts:{int(price * available_balance * leverage * percent * fees)}")
         return int(price * available_balance * leverage * percent * fees)
 
     @exx
@@ -124,12 +125,15 @@ class Endpoints:
                                                 time_in_force="GoodTillCancel").result()
         except TypeError as err:
             print(f"create_limit_order - TypeError:{err}")
+            logger.exception(f"create_limit_order - TypeError:{err}", exc_info=True)
             return False
         except Exception as err:
             print(f"{repr(err)}, {err}")
+            logger.exception(f"{repr(err)}, {err}", exc_info=True)
         else:
             if order[0]['result'] is None:
                 print('result created order is None!')
+                logger.info('result created order is None!')
                 return False
             if order[0]['result'] is not None:
                 result_code = order[0]['ret_code']
@@ -138,12 +142,16 @@ class Endpoints:
                     if result_side == "Buy":
                         print(
                             f"Order limit {colored(result_side, 'green')} with id {order[0]['result']['order_id']}, price:{price}$")
+                        logger.info(f"Order limit {result_side} with id {order[0]['result']['order_id']}, price:{price}$")
                     else:
                         print(
                             f"Order limit {colored(result_side, 'red')} with id {order[0]['result']['order_id']}, price:{price}$")
+                        logger.info(
+                            f"Order limit {result_side} with id {order[0]['result']['order_id']}, price:{price}$")
                     return order
                 else:
                     print(f"Order limit Error with code: {result_code}!")
+                    logger.error(f"Order limit Error with code: {result_code}!")
                     return False
 
     @exx
@@ -160,7 +168,9 @@ class Endpoints:
 
         if result_code == 0:
             print('All orders cancelled successfully!')
+            logger.info('All orders cancelled successfully!')
         else:
+            logger.error(f"Error with code: {result_code}!")
             return print(f"Error with code: {result_code}!")
 
         return result

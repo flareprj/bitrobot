@@ -24,13 +24,16 @@ class Strategy:
             result = self.client.Order.Order_cancelAll(symbol=self.symbol).result()
         except Exception as e:
             print(e)
+            logger.exception(f"{e}", exc_info=True)
         else:
             result_code = result[0]['ret_code']
             if result_code == 0:
-                print('\nAll orders cancelled successfully!')
+                print('All orders cancelled successfully!')
+                logger.info('All orders cancelled successfully!')
                 return 'All orders cancelled successfully!'
             else:
-                print(f"\nError with code: {result_code}!")
+                print(f"Error with code: {result_code}!")
+                logger.error(f"Error with code: {result_code}!")
                 return f"Error with code: {result_code}!"
 
     def show_order_status(self):
@@ -39,6 +42,7 @@ class Strategy:
                 'order_status']
         except Exception as e:
             print(e)
+            logger.exception(f"{e}", exc_info=True)
         else:
             if result is not None:
                 return result
@@ -115,9 +119,10 @@ class Strategy:
                 }[interval](time_now_int, limit)
             except Exception as e:
                 print(e)
+                logger.exception(f"{e}", exc_info=True)
         else:
-            print(interval, allowed)
             print('Incorrect timeframe or limit!')
+            logger.error('Incorrect timeframe or limit!')
 
     def get_balance(self):
         while self.data.available_balance() is None:
@@ -212,6 +217,7 @@ class Strategy:
                                          sl=_zone_150 - delta)
         else:
             print(f'Longs not found! POC:{POC}, price:{price}')
+            logger.info(f'Longs not found! POC:{POC}, price:{price}')
             return 0
 
         if price < zone_25:
@@ -231,6 +237,7 @@ class Strategy:
                                          sl=zone_150 + delta)
         else:
             print(f'Shorts not found! POC:{POC}, price:{price}')
+            logger.info(f'Shorts not found! POC:{POC}, price:{price}')
             return 0
 
     def draw_zones(self, interval, limit):
@@ -239,6 +246,7 @@ class Strategy:
 
         if data_kline is None:
             print("No data received")
+            logger.info("No data received")
             return 0
 
         _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100, \
@@ -294,6 +302,7 @@ class Strategy:
                             return int(row[6])
             else:
                 print(f'path.exists():{path.exists()}, path.is_file():{path.is_file()}, {e}')
+                logger.error(f'path.exists():{path.exists()}, path.is_file():{path.is_file()}, {e}')
                 raise SystemExit(e)
         else:
             url_content = csv_url.content
@@ -334,6 +343,7 @@ class Strategy:
 
         except Exception as e:
             print(e)
+            logger.exception(f"{e}", exc_info=True)
 
         else:
             ind = result[0]
