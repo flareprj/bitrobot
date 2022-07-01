@@ -1,5 +1,7 @@
+import http.client
 import sys
 
+import requests
 from pybit.inverse_perpetual import HTTP
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -90,8 +92,8 @@ class MainWindow(QMainWindow):
 
         self.is_alive = False
 
-        self.ui.api_key.setText('qwZENih1NkKLge7kZX')
-        self.ui.api_secret.setText('ptnypkd2W3DfiB82RX1wQUi9ThQSgvPqiCBh')
+        self.ui.api_key.setText('qwgV06Je2in5PICYGW')
+        self.ui.api_secret.setText('vcflzZbd3PfnXxYD30x8Yj6XJ2l9ndq4bcrP')
         self.ui.lineEdit_3.setText('60')
         self.ui.lineEdit_4.setText('200')
         self.ui.lineEdit_5.setText('20')
@@ -105,7 +107,7 @@ class MainWindow(QMainWindow):
         self.ui.w4.setText('0')
         self.ui.w5.setText('0')
 
-        self.ui.checkAuto.setChecked(False)
+        self.ui.checkAuto.setChecked(True)
 
         self.thread_manager = QThreadPool()
 
@@ -205,10 +207,10 @@ class MainWindow(QMainWindow):
 
         if self.radio:
             self.session = HTTP("https://api-testnet.bybit.com", api_key=self.api_key,
-                                api_secret=self.api_secret)
+                                api_secret=self.api_secret, recv_window=10000)
         else:
             self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
-                                api_secret=self.api_secret)
+                                api_secret=self.api_secret, recv_window=10000)
 
         self.ui.textBrowser.append(f"get available balance..")
         self.balance = self.bot.data.available_balance()
@@ -321,72 +323,84 @@ class MainWindow(QMainWindow):
                     else:
                         print(f"untriggered_order_id:{order_id}")
                         logger.info(f"untriggered_order_id:{order_id}")
-                        while self.status == "Untriggered":
-                            try:
-                                take_profit = float(
-                                    self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
-                                        'result']['take_profit'])
-                                last_price = float(self.bot.get_live_price())
-                                entry_price = float(self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
-                                side = self.session.my_position(symbol="BTCUSD")['result']['side']
+                        self.status = self.bot.show_order_status()
+                        if self.status == "Untriggered":
+                            while self.status == "Untriggered":
+                                try:
+                                    take_profit = float(
+                                        self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
+                                            'result']['take_profit'])
+                                    last_price = float(self.bot.get_live_price())
+                                    entry_price = float(self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
+                                    side = self.session.my_position(symbol="BTCUSD")['result']['side']
 
-                                print(f"take_profit: {take_profit}")
-                                print(f"last_price: {last_price}")
-                                print(f"entry_price: {entry_price}")
-                                print(f"side: {side}")
-                                logger.info(
-                                    f"take_profit:{take_profit}, last_price:{last_price}, entry_price:{entry_price}, side:{side}")
-                            except Exception as e:
-                                print(repr(e), e)
-                                logger.exception(repr(e), e, exc_info=True)
-                            else:
-                                while take_profit == 0 and take_profit is not None:
-                                    self.status = self.bot.show_order_status()
-                                    price = self.bot.get_live_price()
-                                    live_price = price + '$'
-                                    live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
-                                    self.ui.label_12.setText(live_price)
-                                    self.ui.label_15.setText(live_pnl)
-                                    print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
-
-                                    if self.status == "Filled":
-                                        take_profit = float(
-                                            self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
-                                                'result'][
-                                                'take_profit'])
-                                        entry_price = float(
-                                            self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
-                                        break
-                                    sleep(1)
-
-                                if take_profit > entry_price != 0 and take_profit != 0:
-                                    trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
-                                    print(f"trigger_trailing: {trigger_trailing}$")
-                                    logger.info(f"trigger_trailing: {trigger_trailing}$")
-                                elif take_profit < entry_price != 0 and take_profit != 0:
-                                    trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
-                                    print(f"trigger_trailing: {trigger_trailing}$")
-                                    logger.info(f"trigger_trailing: {trigger_trailing}$")
+                                    print(f"take_profit: {take_profit}")
+                                    print(f"last_price: {last_price}")
+                                    print(f"entry_price: {entry_price}")
+                                    print(f"side: {side}")
+                                    logger.info(
+                                        f"take_profit:{take_profit}, last_price:{last_price}, entry_price:{entry_price}, side:{side}")
+                                except requests.exceptions.ConnectionError as e:
+                                    print(repr(e), e)
+                                    logger.exception(repr(e), e, exc_info=True)
+                                    sleep_()
+                                except Exception as e:
+                                    print(repr(e), e)
+                                    logger.exception(repr(e), e, exc_info=True)
+                                    sleep_()
                                 else:
-                                    break
-
-                                while True:
-                                    active_pos = self.session.my_position(symbol="BTCUSD")['result']['size']
-                                    if active_pos != 0 and active_pos is not None:
+                                    while take_profit == 0 and take_profit is not None:
                                         try:
-                                            self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
-                                                                          trailing_stop=self.trailing_stop,
-                                                                          new_trailing_active=trigger_trailing)
-                                        except Exception as e:
-                                            print(e)
-                                            logger.exception(f"{e}", exc_info=True)
-                                        else:
-                                            if float(self.session.my_position(symbol="BTCUSD")['result'][
-                                                         'trailing_stop']) != '0':
-                                                print(
-                                                    f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
-                                                logger.info(f"placing a trailing-stop: {trigger_trailing}$ - ok!")
-                                                break
+                                            self.status = self.bot.show_order_status()
+                                            price = self.bot.get_live_price()
+                                            live_price = price + '$'
+                                            live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
+                                            self.ui.label_12.setText(live_price)
+                                            self.ui.label_15.setText(live_pnl)
+                                            print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
+                                            sleep_()
+                                        except http.client.RemoteDisconnected as e:
+                                            logger.error(f"RemoteDisconnected, {e}")
+                                            sleep_()
+
+                                        if self.status != "Untriggered":
+                                            take_profit = float(
+                                                self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
+                                                    'result'][
+                                                    'take_profit'])
+                                            entry_price = float(
+                                                self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
+                                            logger.info(f"IF BLOCK, {self.status}, {take_profit}, {entry_price}")
+                                            break
+
+                                    if take_profit > entry_price != 0 and take_profit != 0:
+                                        trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
+                                        print(f"trigger_trailing: {trigger_trailing}$")
+                                        logger.info(f"trigger_trailing: {trigger_trailing}$")
+                                    elif take_profit < entry_price != 0 and take_profit != 0:
+                                        trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
+                                        print(f"trigger_trailing: {trigger_trailing}$")
+                                        logger.info(f"trigger_trailing: {trigger_trailing}$")
+                                    else:
+                                        break
+
+                                    while True:
+                                        active_pos = self.session.my_position(symbol="BTCUSD")['result']['size']
+                                        if active_pos != 0 and active_pos is not None:
+                                            try:
+                                                self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
+                                                                              trailing_stop=self.trailing_stop,
+                                                                              new_trailing_active=trigger_trailing)
+                                            except Exception as e:
+                                                print(e)
+                                                logger.exception(f"{e}", exc_info=True)
+                                            else:
+                                                if float(self.session.my_position(symbol="BTCUSD")['result'][
+                                                             'trailing_stop']) != '0':
+                                                    print(
+                                                        f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
+                                                    logger.info(f"placing a trailing-stop: {trigger_trailing}$ - ok!")
+                                                    break
 
                         print(f'\nStop-Take Order was executed!')
                         logger.info(f'Stop-Take Order was executed!')
@@ -619,9 +633,11 @@ class MainWindow(QMainWindow):
     def create_2(self):
         try:
             self.bot.create_2_orders(min(self.arr_l), self._zone_150, self._zone_100, self._zone_75, self._zone_50,
-                                     self._zone_25, self.zone_150, self.zone_100,
-                                     self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
+                                             self._zone_25, self.zone_150, self.zone_100,
+                                             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
 
+            # self.ui.textBrowser.append('Not enough contracts size to create order! Please increase your deposit size or leverage')
+            # raise ValueError
         except Exception as e:
             print(repr(e), e)
             logger.exception(repr(e), e, exc_info=True)

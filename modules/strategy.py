@@ -42,6 +42,7 @@ class Strategy:
         except Exception as e:
             print(e)
             logger.exception(f"{e}", exc_info=True)
+            sleep_()
         else:
             if result is not None:
                 return result
@@ -198,7 +199,8 @@ class Strategy:
     def create_2_orders(self, arr_l, _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100,
                         zone_75, zone_50, zone_25, price, POC):
 
-        delta = int((_zone_25 - _zone_50) / 2)
+        #delta = int((_zone_25 - _zone_50) / 2)
+        delta = 25
         if price > _zone_25:
             self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_25, tp=POC,
                                          sl=_zone_25 - delta)

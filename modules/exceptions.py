@@ -42,19 +42,19 @@ def exx(func):
         try:
             result = func(*args, **kwargs)
         except ValueError as e:
-            logger.error(f'ValueError: {e}', exc_info=True)
+            logger.exception(f'ValueError: {e}', exc_info=True)
             sleep_()
         except KeyError as e:
-            logger.error(f'KeyError: {e}', exc_info=True)
+            logger.exception(f'KeyError: {e}', exc_info=True)
             sleep_()
         except TypeError as e:
-            logger.error(f'TypeError: {e}', exc_info=True)
+            logger.exception(f'TypeError: {e}', exc_info=True)
             sleep_()
         except IndexError as e:
-            logger.error(f'IndexError: {e}', exc_info=True)
+            logger.exception(f'IndexError: {e}', exc_info=True)
             sleep_()
         except (ConnectionError, TimeoutError) as e:
-            logger.error(f'ConnectionError, TimeoutError: {e}', exc_info=True)
+            logger.exception(f'ConnectionError, TimeoutError: {e}', exc_info=True)
             print('\nUnstable connection! Start reconnecting..')
             while not is_internet():
                 is_internet()
@@ -62,40 +62,43 @@ def exx(func):
                 result = func(*args, **kwargs)
                 return result
         except urllib3.exceptions.ProtocolError as e:
-            logger.error(f'ProtocolError: {e}', exc_info=True)
+            logger.exception(f'ProtocolError: {e}', exc_info=True)
             sleep_()
         except bravado.exception.HTTPBadRequest as e:
-            logger.error(f'HTTPBadRequest: {e}', exc_info=True)
+            logger.exception(f'HTTPBadRequest: {e}', exc_info=True)
             sleep_()
         except bravado.exception.HTTPGatewayTimeout as e:
-            logger.error(f'HTTPGatewayTimeout: {e}', exc_info=True)
+            logger.exception(f'HTTPGatewayTimeout: {e}', exc_info=True)
             sleep_()
         except bravado.exception.HTTPBadGateway as e:
-            logger.error(f'HTTPBadGateway: {e}', exc_info=True)
+            logger.exception(f'HTTPBadGateway: {e}', exc_info=True)
             sleep_()
         except bravado.exception.BravadoTimeoutError as e:
-            logger.error(f'BravadoTimeoutError: {e}', exc_info=True)
+            logger.exception(f'BravadoTimeoutError: {e}', exc_info=True)
             sleep_()
         except bravado.exception.BravadoConnectionError as e:
-            logger.error(f'BravadoConnectionError: {e}', exc_info=True)
+            logger.exception(f'BravadoConnectionError: {e}', exc_info=True)
             sleep_()
         except bravado.exception.HTTPInternalServerError as e:
-            logger.error(f'HTTPInternalServerError: {e}', exc_info=True)
+            logger.exception(f'HTTPInternalServerError: {e}', exc_info=True)
             sleep_()
         except bravado_core.exception.MatchingResponseNotFound as e:
-            logger.error(f'MatchingResponseNotFound: {e}', exc_info=True)
+            logger.exception(f'MatchingResponseNotFound: {e}', exc_info=True)
             sleep_()
         except bravado_core.exception.SwaggerMappingError as e:
-            logger.error(f'SwaggerMappingError: {e}', exc_info=True)
+            logger.exception(f'SwaggerMappingError: {e}', exc_info=True)
             sleep_()
         except requests.exceptions.ConnectionError as e:
-            logger.error(f'ConnectionError: {e}', exc_info=True)
+            logger.exception(f'ConnectionError: {e}', exc_info=True)
             sleep_()
         except urllib3.exceptions.NewConnectionError as e:
-            logger.error(f'NewConnectionError: {e}', exc_info=True)
+            logger.exception(f'NewConnectionError: {e}', exc_info=True)
             sleep_()
         except urllib3.exceptions.MaxRetryError as e:
-            logger.error(f'MaxRetryError: {e}', exc_info=True)
+            logger.exception(f'MaxRetryError: {e}', exc_info=True)
+            sleep_()
+        except Exception as e:
+            logger.error(f'Exception: {e}', exc_info=True)
             sleep_()
         else:
             return result
