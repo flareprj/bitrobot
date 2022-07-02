@@ -200,7 +200,7 @@ class Strategy:
                         zone_75, zone_50, zone_25, price, POC):
 
         #delta = int((_zone_25 - _zone_50) / 2)
-        delta = 25
+        delta = 75
         if price > _zone_25:
             self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_25, tp=POC,
                                          sl=_zone_25 - delta)

@@ -1,12 +1,11 @@
 import http.client
 import sys
 
-import requests
 from pybit.inverse_perpetual import HTTP
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-from PyQt6.QtCore import pyqtSlot, QThreadPool
+from PyQt6.QtCore import pyqtSlot, QThreadPool, QSettings
 from PyQt6.QtWidgets import (
     QMainWindow,
     QVBoxLayout,
@@ -67,7 +66,7 @@ class MainWindow(QMainWindow):
         self.api_secret = None
         self.radio = None
         self.w1 = self.w2 = self.w3 = self.w4 = self.w5 = None
-        self.order_weights = [0.1, 0.19, 0.3, 0.45, 1]
+        self.order_weights = [0.1, 0, 0, 0, 0]
         self.arr_l = self.arr_s = None
 
         self.ui = Ui_MainWindow()
@@ -91,24 +90,8 @@ class MainWindow(QMainWindow):
             self.ui.checkAuto.setEnabled(False)
 
         self.is_alive = False
-
-        self.ui.api_key.setText('qwgV06Je2in5PICYGW')
-        self.ui.api_secret.setText('vcflzZbd3PfnXxYD30x8Yj6XJ2l9ndq4bcrP')
-        self.ui.lineEdit_3.setText('60')
-        self.ui.lineEdit_4.setText('200')
-        self.ui.lineEdit_5.setText('20')
-        self.ui.lineEdit_6.setText('0.1')
-        self.ui.trailing_stop.setText('50')
-        self.ui.timer.setText('600')
-
-        self.ui.w1.setText('0.1')
-        self.ui.w2.setText('0')
-        self.ui.w3.setText('0')
-        self.ui.w4.setText('0')
-        self.ui.w5.setText('0')
-
-        self.ui.checkAuto.setChecked(True)
-
+        self.settings = QSettings('Flareprj', 'BitRobot')
+        self.load_settings()
         self.thread_manager = QThreadPool()
 
         self.ui.startButton.clicked.connect(self.get_data_init)
@@ -119,6 +102,63 @@ class MainWindow(QMainWindow):
 
         self.ui.actionExit.triggered.connect(lambda: QApplication.quit())
         self.ui.actionAbout.triggered.connect(self.about)
+
+    def load_settings(self):
+        if self.settings.contains("api_key"):
+            self.ui.api_key.setText(self.settings.value("api_key"))
+        if self.settings.contains("api_secret"):
+            self.ui.api_secret.setText(self.settings.value("api_secret"))
+        if self.settings.contains("lineEdit_3"):
+            self.ui.lineEdit_3.setText(self.settings.value("lineEdit_3"))
+        if self.settings.contains("lineEdit_4"):
+            self.ui.lineEdit_4.setText(self.settings.value("lineEdit_4"))
+        if self.settings.contains("lineEdit_5"):
+            self.ui.lineEdit_5.setText(self.settings.value("lineEdit_5"))
+        if self.settings.contains("lineEdit_6"):
+            self.ui.lineEdit_6.setText(self.settings.value("lineEdit_6"))
+        if self.settings.contains("trailing_stop"):
+            self.ui.trailing_stop.setText(self.settings.value("trailing_stop"))
+        if self.settings.contains("timer"):
+            self.ui.timer.setText(self.settings.value("timer"))
+        if self.settings.contains("w1"):
+            self.ui.w1.setText(self.settings.value("w1"))
+        if self.settings.contains("w2"):
+            self.ui.w2.setText(self.settings.value("w2"))
+        if self.settings.contains("w3"):
+            self.ui.w3.setText(self.settings.value("w3"))
+        if self.settings.contains("w4"):
+            self.ui.w4.setText(self.settings.value("w4"))
+        if self.settings.contains("w5"):
+            self.ui.w5.setText(self.settings.value("w5"))
+
+        if self.settings.contains("test_rb"):
+            self.ui.test_rb.setChecked(self.settings.value("test_rb", False, bool))
+        if self.settings.contains("main_rb"):
+            self.ui.main_rb.setChecked(self.settings.value("main_rb", True, bool))
+        if self.settings.contains("checkAuto"):
+            self.ui.checkAuto.setChecked(self.settings.value("checkAuto", True, bool))
+
+    def save_settings(self):
+        self.settings.setValue("api_key", self.ui.api_key.text())
+        self.settings.setValue("api_secret", self.ui.api_secret.text())
+        self.settings.setValue("lineEdit_3", self.ui.lineEdit_3.text())
+        self.settings.setValue("lineEdit_4", self.ui.lineEdit_4.text())
+        self.settings.setValue("lineEdit_5", self.ui.lineEdit_5.text())
+        self.settings.setValue("lineEdit_6", self.ui.lineEdit_6.text())
+        self.settings.setValue("trailing_stop", self.ui.trailing_stop.text())
+        self.settings.setValue("timer", self.ui.timer.text())
+        self.settings.setValue("w1", self.ui.w1.text())
+        self.settings.setValue("w2", self.ui.w2.text())
+        self.settings.setValue("w3", self.ui.w3.text())
+        self.settings.setValue("w4", self.ui.w4.text())
+        self.settings.setValue("w5", self.ui.w5.text())
+
+        self.settings.setValue("test_rb", self.ui.test_rb.isChecked())
+        self.settings.setValue("main_rb", self.ui.main_rb.isChecked())
+        self.settings.setValue("checkAuto", self.ui.checkAuto.isChecked())
+
+    def closeEvent(self, event) -> None:
+        self.save_settings()
 
     def about(self):
         dlg = About(self)
@@ -132,12 +172,18 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def reset(self):
-        self.ui.w1.setText('0.1')
-        self.ui.w2.setText('0.19')
-        self.ui.w3.setText('0.3')
-        self.ui.w4.setText('0.45')
-        self.ui.w5.setText('1')
-
+        if not self.ui.checkAuto.isChecked():
+            self.ui.w1.setText('0.1')
+            self.ui.w2.setText('0.19')
+            self.ui.w3.setText('0.3')
+            self.ui.w4.setText('0.45')
+            self.ui.w5.setText('1')
+        else:
+            self.ui.w1.setText('0.1')
+            self.ui.w2.setText('0')
+            self.ui.w3.setText('0')
+            self.ui.w4.setText('0')
+            self.ui.w5.setText('0')
     @pyqtSlot()
     def get_data_init(self):
         self.api_key = self.ui.api_key.text()
@@ -207,10 +253,10 @@ class MainWindow(QMainWindow):
 
         if self.radio:
             self.session = HTTP("https://api-testnet.bybit.com", api_key=self.api_key,
-                                api_secret=self.api_secret, recv_window=10000)
+                                api_secret=self.api_secret, recv_window=5000)
         else:
             self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
-                                api_secret=self.api_secret, recv_window=10000)
+                                api_secret=self.api_secret, recv_window=5000)
 
         self.ui.textBrowser.append(f"get available balance..")
         self.balance = self.bot.data.available_balance()
@@ -311,7 +357,7 @@ class MainWindow(QMainWindow):
                     print("We have Untriggered order! Cancel another orders!")
                     logger.info(f"We have Untriggered order! Cancel another orders!")
                     self.cancel()
-                    self.status = self.bot.show_order_status()
+                    sleep_()
                     try:
                         order_id = \
                             self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
@@ -323,46 +369,52 @@ class MainWindow(QMainWindow):
                     else:
                         print(f"untriggered_order_id:{order_id}")
                         logger.info(f"untriggered_order_id:{order_id}")
-                        self.status = self.bot.show_order_status()
-                        if self.status == "Untriggered":
-                            while self.status == "Untriggered":
-                                try:
-                                    take_profit = float(
-                                        self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
-                                            'result']['take_profit'])
-                                    last_price = float(self.bot.get_live_price())
-                                    entry_price = float(self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
-                                    side = self.session.my_position(symbol="BTCUSD")['result']['side']
+                        while self.status == "Untriggered":
+                            try:
+                                sleep(1)
+                                take_profit = float(
+                                    self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
+                                        'result']['take_profit'])
+                                last_price = float(self.bot.get_live_price())
+                                entry_price = float(self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
+                                side = self.session.my_position(symbol="BTCUSD")['result']['side']
 
-                                    print(f"take_profit: {take_profit}")
-                                    print(f"last_price: {last_price}")
-                                    print(f"entry_price: {entry_price}")
-                                    print(f"side: {side}")
-                                    logger.info(
-                                        f"take_profit:{take_profit}, last_price:{last_price}, entry_price:{entry_price}, side:{side}")
-                                except requests.exceptions.ConnectionError as e:
-                                    print(repr(e), e)
-                                    logger.exception(repr(e), e, exc_info=True)
-                                    sleep_()
-                                except Exception as e:
-                                    print(repr(e), e)
-                                    logger.exception(repr(e), e, exc_info=True)
-                                    sleep_()
-                                else:
-                                    while take_profit == 0 and take_profit is not None:
-                                        try:
-                                            self.status = self.bot.show_order_status()
-                                            price = self.bot.get_live_price()
-                                            live_price = price + '$'
-                                            live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
-                                            self.ui.label_12.setText(live_price)
-                                            self.ui.label_15.setText(live_pnl)
-                                            print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
-                                            sleep_()
-                                        except http.client.RemoteDisconnected as e:
-                                            logger.error(f"RemoteDisconnected, {e}")
-                                            sleep_()
-
+                                print(f"take_profit: {take_profit}")
+                                print(f"last_price: {last_price}")
+                                print(f"entry_price: {entry_price}")
+                                print(f"side: {side}")
+                                logger.info(
+                                    f"take_profit:{take_profit}, last_price:{last_price}, entry_price:{entry_price}, side:{side}")
+                            except http.client.RemoteDisconnected as e:
+                                print(repr(e), e)
+                                logger.error(f"RemoteDisconnected, {e}")
+                                sleep_()
+                                continue
+                            except requests.exceptions.ConnectionError as e:
+                                print(repr(e), e)
+                                logger.exception(repr(e), e, exc_info=True)
+                                sleep_()
+                                continue
+                            except Exception as e:
+                                print(repr(e), e)
+                                logger.exception(repr(e), e, exc_info=True)
+                                sleep_()
+                                continue
+                            else:
+                                '''
+                                Ожидаем исполнения UNTRIGGERED - ордера
+                                при выходе из цикла осуществляется обновление переменной take-profit 
+                                '''
+                                while take_profit == 0 and take_profit is not None:
+                                    try:
+                                        self.status = self.bot.show_order_status()
+                                        price = self.bot.get_live_price()
+                                        live_price = price + '$'
+                                        live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
+                                        self.ui.label_12.setText(live_price)
+                                        self.ui.label_15.setText(live_pnl)
+                                        print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
+                                        sleep_()
                                         if self.status != "Untriggered":
                                             take_profit = float(
                                                 self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
@@ -372,59 +424,59 @@ class MainWindow(QMainWindow):
                                                 self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
                                             logger.info(f"IF BLOCK, {self.status}, {take_profit}, {entry_price}")
                                             break
+                                    except http.client.RemoteDisconnected as e:
+                                        logger.error(f"RemoteDisconnected, {e}")
+                                        sleep_()
+                                        continue
+                                    except Exception as e:
+                                        print(e)
+                                        logger.exception(repr(e), e, exc_info=True)
+                                        sleep_()
+                                        continue
 
-                                    if take_profit > entry_price != 0 and take_profit != 0:
-                                        trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
-                                        print(f"trigger_trailing: {trigger_trailing}$")
-                                        logger.info(f"trigger_trailing: {trigger_trailing}$")
-                                    elif take_profit < entry_price != 0 and take_profit != 0:
-                                        trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
-                                        print(f"trigger_trailing: {trigger_trailing}$")
-                                        logger.info(f"trigger_trailing: {trigger_trailing}$")
-                                    else:
-                                        break
+                                if take_profit > entry_price != 0 and take_profit != 0:
+                                    trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
+                                    print(f"trigger_trailing: {trigger_trailing}$")
+                                    logger.info(f"trigger_trailing: {trigger_trailing}$")
+                                elif take_profit < entry_price != 0 and take_profit != 0:
+                                    trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
+                                    print(f"trigger_trailing: {trigger_trailing}$")
+                                    logger.info(f"trigger_trailing: {trigger_trailing}$")
+                                else:
+                                    break
 
-                                    while True:
-                                        active_pos = self.session.my_position(symbol="BTCUSD")['result']['size']
-                                        if active_pos != 0 and active_pos is not None:
-                                            try:
-                                                self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
-                                                                              trailing_stop=self.trailing_stop,
-                                                                              new_trailing_active=trigger_trailing)
-                                            except Exception as e:
-                                                print(e)
-                                                logger.exception(f"{e}", exc_info=True)
-                                            else:
-                                                if float(self.session.my_position(symbol="BTCUSD")['result'][
-                                                             'trailing_stop']) != '0':
-                                                    print(
-                                                        f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
-                                                    logger.info(f"placing a trailing-stop: {trigger_trailing}$ - ok!")
-                                                    break
+                                while True:
+                                    active_pos = self.session.my_position(symbol="BTCUSD")['result']['size']
+                                    if active_pos != 0 and active_pos is not None:
+                                        try:
+                                            self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
+                                                                          trailing_stop=self.trailing_stop,
+                                                                          new_trailing_active=trigger_trailing)
+                                        except Exception as e:
+                                            print(e)
+                                            logger.exception(f"{e}", exc_info=True)
+                                        else:
+                                            if float(self.session.my_position(symbol="BTCUSD")['result'][
+                                                         'trailing_stop']) != '0':
+                                                print(
+                                                    f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
+                                                logger.info(f"placing a trailing-stop: {trigger_trailing}$ - ok!")
+                                                break
 
                         print(f'\nStop-Take Order was executed!')
                         logger.info(f'Stop-Take Order was executed!')
-                        self.status = self.bot.show_order_status()
-                        print(self.status)
-                        logger.info(f"{self.status}")
-                        try:
-                            self.bot.client.Order.Order_cancel(symbol="BTCUSD", order_id=order_id).result()
-                        except Exception as e:
-                            print(e)
-                            logger.exception(f"{e}", exc_info=True)
-                        else:
-                            self.update_redraw()
+                        self.update_redraw()
                 elif not self.is_alive:
                     break
-                elif self.ui.checkAuto and (
-                        self.status == 'Cancelled' or self.status == 'Deactivated' or self.status == 'Filled'):
+                elif self.status == 'Cancelled' or self.status == 'Deactivated' or self.status == 'Filled':
+                    sleep_()
                     while self.status != "New":
-                        sleep(1)
                         print(f"waiting.. status:{self.status}")
                         logger.info(f"waiting.. status:{self.status}")
                         self.status = self.bot.show_order_status()
                         if self.status == "Untriggered":
                             break
+                        sleep(1)
                     else:
                         print(f"return.. status:{self.status}")
                         logger.info(f"return.. status:{self.status}")
