@@ -48,12 +48,17 @@ class Strategy:
                 return result
 
     def get_live_pnl(self):
-        result = self.client.Positions.Positions_myPosition(symbol=self.symbol).result()[0]['result']['unrealised_pnl']
-        if result == 0:
-            return result
-        else:
-            result = '{:0.8f}'.format(result)
-            return result
+        try:
+            result = self.client.Positions.Positions_myPosition(symbol=self.symbol).result()[0]['result']['unrealised_pnl']
+            if result == 0:
+                return result
+            elif result is not None:
+                result = '{:0.8f}'.format(result)
+                return result
+        except Exception as e:
+            print(e)
+            logger.exception(f"{e}", exc_info=True)
+            sleep_()
 
     def get_live_price(self):
         return str(self.data.show_last_price())
@@ -200,7 +205,7 @@ class Strategy:
                         zone_75, zone_50, zone_25, price, POC):
 
         #delta = int((_zone_25 - _zone_50) / 2)
-        delta = 75
+        delta = 50
         if price > _zone_25:
             self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_25, tp=POC,
                                          sl=_zone_25 - delta)

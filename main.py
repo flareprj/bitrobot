@@ -253,10 +253,10 @@ class MainWindow(QMainWindow):
 
         if self.radio:
             self.session = HTTP("https://api-testnet.bybit.com", api_key=self.api_key,
-                                api_secret=self.api_secret, recv_window=5000)
+                                api_secret=self.api_secret)
         else:
             self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
-                                api_secret=self.api_secret, recv_window=5000)
+                                api_secret=self.api_secret)
 
         self.ui.textBrowser.append(f"get available balance..")
         self.balance = self.bot.data.available_balance()
@@ -307,7 +307,7 @@ class MainWindow(QMainWindow):
                 self.arr_l = [x for x in self.arr_l if x != 0]
 
                 self.create_2()
-                sleep(3)
+                sleep_()
             else:
                 self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
                 self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
@@ -357,8 +357,9 @@ class MainWindow(QMainWindow):
                     print("We have Untriggered order! Cancel another orders!")
                     logger.info(f"We have Untriggered order! Cancel another orders!")
                     self.cancel()
-                    sleep_()
+                    #sleep_()
                     try:
+                        self.status = self.bot.show_order_status()
                         order_id = \
                             self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
                                                                   order_status="Untriggered").result()[
@@ -366,6 +367,13 @@ class MainWindow(QMainWindow):
                     except Exception as e:
                         print(e)
                         logger.exception(e, exc_info=True)
+                        if self.status != "Untriggered":
+                            self.status = self.bot.show_order_status()
+                            # На случай, если произошло очень резкое исполнение
+                            if self.status == "Filled":
+                                self.bot.cancel_orders()
+                            print(f'current_status: {self.status}')
+                            sleep(1)
                     else:
                         print(f"untriggered_order_id:{order_id}")
                         logger.info(f"untriggered_order_id:{order_id}")
@@ -389,58 +397,22 @@ class MainWindow(QMainWindow):
                                 print(repr(e), e)
                                 logger.error(f"RemoteDisconnected, {e}")
                                 sleep_()
-                                continue
                             except requests.exceptions.ConnectionError as e:
                                 print(repr(e), e)
                                 logger.exception(repr(e), e, exc_info=True)
                                 sleep_()
-                                continue
                             except Exception as e:
                                 print(repr(e), e)
                                 logger.exception(repr(e), e, exc_info=True)
                                 sleep_()
-                                continue
                             else:
-                                '''
-                                Ожидаем исполнения UNTRIGGERED - ордера
-                                при выходе из цикла осуществляется обновление переменной take-profit 
-                                '''
-                                while take_profit == 0 and take_profit is not None:
-                                    try:
-                                        self.status = self.bot.show_order_status()
-                                        price = self.bot.get_live_price()
-                                        live_price = price + '$'
-                                        live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
-                                        self.ui.label_12.setText(live_price)
-                                        self.ui.label_15.setText(live_pnl)
-                                        print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
-                                        sleep_()
-                                        if self.status != "Untriggered":
-                                            take_profit = float(
-                                                self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
-                                                    'result'][
-                                                    'take_profit'])
-                                            entry_price = float(
-                                                self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
-                                            logger.info(f"IF BLOCK, {self.status}, {take_profit}, {entry_price}")
-                                            break
-                                    except http.client.RemoteDisconnected as e:
-                                        logger.error(f"RemoteDisconnected, {e}")
-                                        sleep_()
-                                        continue
-                                    except Exception as e:
-                                        print(e)
-                                        logger.exception(repr(e), e, exc_info=True)
-                                        sleep_()
-                                        continue
-
-                                if take_profit > entry_price != 0 and take_profit != 0:
+                                if take_profit > entry_price:
                                     trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
-                                    print(f"trigger_trailing: {trigger_trailing}$")
+                                    print(f"\ntrigger_trailing: {trigger_trailing}$")
                                     logger.info(f"trigger_trailing: {trigger_trailing}$")
-                                elif take_profit < entry_price != 0 and take_profit != 0:
+                                elif take_profit < entry_price:
                                     trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
-                                    print(f"trigger_trailing: {trigger_trailing}$")
+                                    print(f"\ntrigger_trailing: {trigger_trailing}$")
                                     logger.info(f"trigger_trailing: {trigger_trailing}$")
                                 else:
                                     break
@@ -455,6 +427,7 @@ class MainWindow(QMainWindow):
                                         except Exception as e:
                                             print(e)
                                             logger.exception(f"{e}", exc_info=True)
+                                            sleep_()
                                         else:
                                             if float(self.session.my_position(symbol="BTCUSD")['result'][
                                                          'trailing_stop']) != '0':
@@ -463,25 +436,41 @@ class MainWindow(QMainWindow):
                                                 logger.info(f"placing a trailing-stop: {trigger_trailing}$ - ok!")
                                                 break
 
-                        print(f'\nStop-Take Order was executed!')
+                                while self.status == "Untriggered":
+                                    try:
+                                        self.status = self.bot.show_order_status()
+                                        price = self.bot.get_live_price()
+                                        live_price = price + '$'
+                                        live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
+                                        self.ui.label_12.setText(live_price)
+                                        self.ui.label_15.setText(live_pnl)
+                                        print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
+                                        sleep_()
+                                        if self.status != "Untriggered":
+                                            logger.info(f"IF BLOCK, {self.status}")
+                                            break
+                                    except http.client.RemoteDisconnected as e:
+                                        logger.error(f"RemoteDisconnected, {e}")
+                                        sleep_()
+                                    except Exception as e:
+                                        print(e)
+                                        logger.exception(repr(e), e, exc_info=True)
+                                        sleep_()
+
+                        print(f'\nStop-Take Order was executed! time:{datetime.now()}')
                         logger.info(f'Stop-Take Order was executed!')
                         self.update_redraw()
+                        self.status = self.bot.show_order_status()
+                        while self.status != "New":
+                            self.status = self.bot.show_order_status()
+                            if self.status == "Filled":
+                                print(f"FAST FILLED")
+                                logger.info(f"FAST FILLED")
+                                self.cancel()
+                            print(f'current_status: {self.status}')
+                            sleep(1)
                 elif not self.is_alive:
                     break
-                elif self.status == 'Cancelled' or self.status == 'Deactivated' or self.status == 'Filled':
-                    sleep_()
-                    while self.status != "New":
-                        print(f"waiting.. status:{self.status}")
-                        logger.info(f"waiting.. status:{self.status}")
-                        self.status = self.bot.show_order_status()
-                        if self.status == "Untriggered":
-                            break
-                        sleep(1)
-                    else:
-                        print(f"return.. status:{self.status}")
-                        logger.info(f"return.. status:{self.status}")
-                else:
-                    self.update_redraw()
             else:
                 self.ui.createButton.setEnabled(True)
                 self.ui.cancelButton.setEnabled(True)
