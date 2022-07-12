@@ -7,8 +7,8 @@ from modules.strategy import *
 class UpdateOrders(TestCase):
     def setUp(self) -> None:
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
-        self.api_key = 'kENyGGsOnjJuLvIYqQ'
-        self.api_secret = 'jxaVvRLTUqE5ds8CejCTwkYoEUJ9niuovJ1l'
+        self.api_key = '0ufzW85gpidJWYdN7Q'
+        self.api_secret = 'eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa'
         self.bot = Strategy(test=False, symbol="BTCUSD", api_key=self.api_key,
                             api_secret=self.api_secret, app=None)
         self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
@@ -184,8 +184,8 @@ class ReplaceStopOrder(TestCase):
 class LimitOrder(TestCase):
     def setUp(self) -> None:
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
-        self.api_key = 'qwZENih1NkKLge7kZX'
-        self.api_secret = 'ptnypkd2W3DfiB82RX1wQUi9ThQSgvPqiCBh'
+        self.api_key = '0ufzW85gpidJWYdN7Q'
+        self.api_secret = 'eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa'
         self.bot = Strategy(test=False, symbol="BTCUSD", api_key='qwgV06Je2in5PICYGW',
                             api_secret='vcflzZbd3PfnXxYD30x8Yj6XJ2l9ndq4bcrP', app=None)
         self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
@@ -254,10 +254,10 @@ class LimitOrder(TestCase):
 class WhileLoop(TestCase):
     def setUp(self) -> None:
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
-        self.api_key = 'qwgV06Je2in5PICYGW'
-        self.api_secret = 'vcflzZbd3PfnXxYD30x8Yj6XJ2l9ndq4bcrP'
-        self.bot = Strategy(test=False, symbol="BTCUSD", api_key='qwgV06Je2in5PICYGW',
-                            api_secret='vcflzZbd3PfnXxYD30x8Yj6XJ2l9ndq4bcrP', app=None)
+        self.api_key = '0ufzW85gpidJWYdN7Q'
+        self.api_secret = 'eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa'
+        self.bot = Strategy(test=False, symbol="BTCUSD", api_key='0ufzW85gpidJWYdN7Q',
+                            api_secret='eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa', app=None)
         self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
         self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
                             api_secret=self.api_secret)
@@ -304,13 +304,17 @@ class WhileLoop(TestCase):
                     print(f"untriggered_order_id:{order_id}")
                     while self.status == "Untriggered":
                         try:
-                            sleep(1)
+                            sleep_()
                             take_profit = float(
                                 self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
                                     'result']['take_profit'])
+                            sleep_()
                             last_price = float(self.bot.get_live_price())
+                            sleep_()
                             entry_price = float(self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
+                            sleep_()
                             side = self.session.my_position(symbol="BTCUSD")['result']['side']
+                            sleep_()
 
                             print(f"take_profit: {take_profit}")
                             print(f"last_price: {last_price}")
@@ -363,6 +367,7 @@ class WhileLoop(TestCase):
                             while self.status == "Untriggered":
                                 try:
                                     self.status = self.bot.show_order_status()
+                                    sleep(1)
                                     live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
                                     print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
                                     sleep_()

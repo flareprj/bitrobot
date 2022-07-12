@@ -306,7 +306,9 @@ class MainWindow(QMainWindow):
                 self.arr_l.extend(self.arr_s)
                 self.arr_l = [x for x in self.arr_l if x != 0]
 
-                self.create_2()
+                res = self.create_2()
+                if res == 0:
+                    return
                 sleep_()
             else:
                 self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
@@ -329,17 +331,17 @@ class MainWindow(QMainWindow):
                                         print(f'current_status: {self.status}, try again..')
                                         logger.info(f'current_status: {self.status}, try again..')
                                         sleep_()
-                                live_price = self.bot.get_live_price() + '$'
-                                live_pnl = '0 BTC'
-                                self.ui.label_12.setText(live_price)
-                                self.ui.label_15.setText(live_pnl)
+                                #live_price = self.bot.get_live_price() + '$'
+                                #live_pnl = '0 BTC'
+                                #self.ui.label_12.setText(live_price)
+                                #self.ui.label_15.setText(live_pnl)
                                 if self.status == "Untriggered" or not self.is_alive:
                                     break
                                 print(f"\relapsed_time: {elapsed_time}sec", end='')
                                 live_elapsed = str(elapsed_time) + " sec"
                                 self.ui.label_22.setText(live_elapsed)
                                 elapsed_time -= 1
-                                sleep(1)
+                                sleep_()
                             except Exception as e:
                                 print('\n', e)
                                 logger.exception(f'{e}', exc_info=True)
@@ -356,8 +358,8 @@ class MainWindow(QMainWindow):
                 elif self.status == "Untriggered":
                     print("We have Untriggered order! Cancel another orders!")
                     logger.info(f"We have Untriggered order! Cancel another orders!")
+                    sleep_()
                     self.cancel()
-                    #sleep_()
                     try:
                         self.status = self.bot.show_order_status()
                         order_id = \
@@ -371,48 +373,54 @@ class MainWindow(QMainWindow):
                             self.status = self.bot.show_order_status()
                             # На случай, если произошло очень резкое исполнение
                             if self.status == "Filled":
-                                self.bot.cancel_orders()
+                                sleep_()
+                                self.cancel()
                             print(f'current_status: {self.status}')
-                            sleep(1)
+                            sleep_()
                     else:
                         print(f"untriggered_order_id:{order_id}")
                         logger.info(f"untriggered_order_id:{order_id}")
                         while self.status == "Untriggered":
                             try:
-                                sleep(1)
+                                sleep_()
                                 take_profit = float(
                                     self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
                                         'result']['take_profit'])
-                                last_price = float(self.bot.get_live_price())
+                                #last_price = float(self.bot.get_live_price())
+                                sleep_()
                                 entry_price = float(self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
+                                sleep_()
                                 side = self.session.my_position(symbol="BTCUSD")['result']['side']
 
                                 print(f"take_profit: {take_profit}")
-                                print(f"last_price: {last_price}")
+                                #print(f"last_price: {last_price}")
                                 print(f"entry_price: {entry_price}")
                                 print(f"side: {side}")
                                 logger.info(
-                                    f"take_profit:{take_profit}, last_price:{last_price}, entry_price:{entry_price}, side:{side}")
+                                    f"take_profit:{take_profit}, entry_price:{entry_price}, side:{side}")
                             except http.client.RemoteDisconnected as e:
                                 print(repr(e), e)
                                 logger.error(f"RemoteDisconnected, {e}")
                                 sleep_()
+                                continue
                             except requests.exceptions.ConnectionError as e:
                                 print(repr(e), e)
                                 logger.exception(repr(e), e, exc_info=True)
                                 sleep_()
+                                continue
                             except Exception as e:
                                 print(repr(e), e)
                                 logger.exception(repr(e), e, exc_info=True)
                                 sleep_()
+                                continue
                             else:
                                 if take_profit > entry_price:
                                     trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
-                                    print(f"\ntrigger_trailing: {trigger_trailing}$")
+                                    print(f"trigger_trailing: {trigger_trailing}$")
                                     logger.info(f"trigger_trailing: {trigger_trailing}$")
                                 elif take_profit < entry_price:
                                     trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
-                                    print(f"\ntrigger_trailing: {trigger_trailing}$")
+                                    print(f"trigger_trailing: {trigger_trailing}$")
                                     logger.info(f"trigger_trailing: {trigger_trailing}$")
                                 else:
                                     break
@@ -428,6 +436,7 @@ class MainWindow(QMainWindow):
                                             print(e)
                                             logger.exception(f"{e}", exc_info=True)
                                             sleep_()
+                                            continue
                                         else:
                                             if float(self.session.my_position(symbol="BTCUSD")['result'][
                                                          'trailing_stop']) != '0':
@@ -439,12 +448,13 @@ class MainWindow(QMainWindow):
                                 while self.status == "Untriggered":
                                     try:
                                         self.status = self.bot.show_order_status()
-                                        price = self.bot.get_live_price()
-                                        live_price = price + '$'
-                                        live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
-                                        self.ui.label_12.setText(live_price)
-                                        self.ui.label_15.setText(live_pnl)
-                                        print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
+                                        #price = self.bot.get_live_price()
+                                        #live_price = price + '$'
+                                        #live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
+                                        #self.ui.label_12.setText(live_price)
+                                        #self.ui.label_15.setText(live_pnl)
+                                        print(f"\r{self.status}", end='')
+                                        #print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
                                         sleep_()
                                         if self.status != "Untriggered":
                                             logger.info(f"IF BLOCK, {self.status}")
@@ -452,10 +462,12 @@ class MainWindow(QMainWindow):
                                     except http.client.RemoteDisconnected as e:
                                         logger.error(f"RemoteDisconnected, {e}")
                                         sleep_()
+                                        continue
                                     except Exception as e:
                                         print(e)
                                         logger.exception(repr(e), e, exc_info=True)
                                         sleep_()
+                                        continue
 
                         print(f'\nStop-Take Order was executed! time:{datetime.now()}')
                         logger.info(f'Stop-Take Order was executed!')
@@ -505,7 +517,9 @@ class MainWindow(QMainWindow):
         self.arr_l = [x for x in self.arr_l if x != 0]
         print('redraw completed..')
         logger.info(f'redraw completed..')
-        self.create_2()
+        res = self.create_2()
+        if res == 0:
+            return
         self.status = self.bot.show_order_status()
 
     def qty_calc(self):
@@ -673,12 +687,17 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def create_2(self):
         try:
-            self.bot.create_2_orders(min(self.arr_l), self._zone_150, self._zone_100, self._zone_75, self._zone_50,
+            default_margin = min(self.arr_l, default=0)
+            if default_margin == 0:
+                self.ui.textBrowser.append(
+                    'Not enough contracts size to create order! Please increase your deposit size or leverage')
+                print('Not enough contracts size to create order! Please increase your deposit size or leverage')
+                logger.info(f'Not enough contracts size to create order! Please increase your deposit size or leverage')
+                return 0
+            return self.bot.create_2_orders(default_margin, self._zone_150, self._zone_100, self._zone_75, self._zone_50,
                                              self._zone_25, self.zone_150, self.zone_100,
                                              self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
 
-            # self.ui.textBrowser.append('Not enough contracts size to create order! Please increase your deposit size or leverage')
-            # raise ValueError
         except Exception as e:
             print(repr(e), e)
             logger.exception(repr(e), e, exc_info=True)
