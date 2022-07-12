@@ -245,8 +245,10 @@ class MainWindow(QMainWindow):
 
         self.ui.textBrowser.clear()
         self.ui.textBrowser.append(f"Start.. time:{datetime.now()}")
-        print(f"Start.. time:{datetime.now()}")
-        logger.info(f"Start..")
+        print(f"Starting..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
+              f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}, time:{datetime.now()}")
+        logger.info(f"Starting..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
+              f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}")
 
         self.ui.textBrowser.append('connecting..')
         self.bot = Strategy(self.radio, "BTCUSD", self.api_key, self.api_secret, MainWindow)
@@ -405,12 +407,12 @@ class MainWindow(QMainWindow):
                                 continue
                             except requests.exceptions.ConnectionError as e:
                                 print(repr(e), e)
-                                logger.exception(repr(e), e, exc_info=True)
+                                logger.exception(e, exc_info=True)
                                 sleep_()
                                 continue
                             except Exception as e:
                                 print(repr(e), e)
-                                logger.exception(repr(e), e, exc_info=True)
+                                logger.exception(e, exc_info=True)
                                 sleep_()
                                 continue
                             else:
@@ -465,7 +467,7 @@ class MainWindow(QMainWindow):
                                         continue
                                     except Exception as e:
                                         print(e)
-                                        logger.exception(repr(e), e, exc_info=True)
+                                        logger.exception(e, exc_info=True)
                                         sleep_()
                                         continue
 
@@ -700,7 +702,7 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             print(repr(e), e)
-            logger.exception(repr(e), e, exc_info=True)
+            logger.exception(e, exc_info=True)
 
     @pyqtSlot()
     def cancel(self):
