@@ -16,7 +16,7 @@ logger = logging.getLogger('app_logger')
 
 
 def sleep_():
-    sleep(randint(1, 5))
+    sleep(randint(1, 8))
 
 
 def is_internet():

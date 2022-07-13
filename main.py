@@ -245,9 +245,9 @@ class MainWindow(QMainWindow):
 
         self.ui.textBrowser.clear()
         self.ui.textBrowser.append(f"Start.. time:{datetime.now()}")
-        print(f"Starting..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
+        print(f"Start..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
               f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}, time:{datetime.now()}")
-        logger.info(f"Starting..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
+        logger.info(f"Start..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
               f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}")
 
         self.ui.textBrowser.append('connecting..')
@@ -362,6 +362,7 @@ class MainWindow(QMainWindow):
                     logger.info(f"We have Untriggered order! Cancel another orders!")
                     sleep_()
                     self.cancel()
+                    sleep_()
                     try:
                         self.status = self.bot.show_order_status()
                         order_id = \
@@ -377,8 +378,10 @@ class MainWindow(QMainWindow):
                             if self.status == "Filled":
                                 sleep_()
                                 self.cancel()
+                                break
                             print(f'current_status: {self.status}')
                             sleep_()
+                            continue
                     else:
                         print(f"untriggered_order_id:{order_id}")
                         logger.info(f"untriggered_order_id:{order_id}")
@@ -475,16 +478,23 @@ class MainWindow(QMainWindow):
                         logger.info(f'Stop-Take Order was executed!')
                         self.update_redraw()
                         self.status = self.bot.show_order_status()
-                        while self.status != "New":
-                            self.status = self.bot.show_order_status()
-                            if self.status == "Filled":
-                                print(f"FAST FILLED")
-                                logger.info(f"FAST FILLED")
-                                self.cancel()
-                            print(f'current_status: {self.status}')
-                            sleep(1)
+
+                        # while self.status != "New":
+                        #     self.status = self.bot.show_order_status()
+                        #     if self.status == "Filled":
+                        #         print(f"FAST FILLED")
+                        #         logger.info(f"FAST FILLED")
+                        #         self.cancel()
+                        #     print(f'current_status: {self.status}')
+                        #     sleep(1)
+
                 elif not self.is_alive:
                     break
+                else:
+                    print(f'\nStrange situation! status:{self.status}, time:{datetime.now()}')
+                    logger.info(f'Strange situation! status:{self.status}')
+                    self.update_redraw()
+
             else:
                 self.ui.createButton.setEnabled(True)
                 self.ui.cancelButton.setEnabled(True)
@@ -519,10 +529,25 @@ class MainWindow(QMainWindow):
         self.arr_l = [x for x in self.arr_l if x != 0]
         print('redraw completed..')
         logger.info(f'redraw completed..')
-        res = self.create_2()
-        if res == 0:
-            return
-        self.status = self.bot.show_order_status()
+
+        # открываем новые ордера только когда их нет
+        try:
+            qt = self.session.get_active_order(
+                symbol="BTCUSD",
+                order_status="New"
+            )['result']
+        except Exception as err:
+            print(f'{err}')
+            logger.exception(repr(err), exc_info=True)
+        else:
+            if qt is not None:
+                return
+        finally:
+            res = self.create_2()
+            if res == 0:
+                return
+            sleep_()
+            self.status = self.bot.show_order_status()
 
     def qty_calc(self):
         _, _, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
