@@ -383,15 +383,10 @@ class MainWindow(QMainWindow):
                         logger.info(f"untriggered_order_id:{order_id}")
                         while self.status == "Untriggered":
                             try:
-                                sleep_()
-                                take_profit = float(
-                                    self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
-                                        'result']['take_profit'])
-                                #last_price = float(self.bot.get_live_price())
-                                sleep_()
-                                entry_price = float(self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
-                                sleep_()
-                                side = self.session.my_position(symbol="BTCUSD")['result']['side']
+                                req_pos = self.session.my_position(symbol="BTCUSD")['result']
+                                take_profit = float(req_pos['take_profit'])
+                                entry_price = float(req_pos['entry_price'])
+                                side = req_pos['side']
 
                                 print(f"take_profit: {take_profit}")
                                 #print(f"last_price: {last_price}")
@@ -427,7 +422,7 @@ class MainWindow(QMainWindow):
                                     break
 
                                 while True:
-                                    active_pos = self.session.my_position(symbol="BTCUSD")['result']['size']
+                                    active_pos = req_pos['size']
                                     if active_pos != 0 and active_pos is not None:
                                         try:
                                             self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
@@ -439,11 +434,16 @@ class MainWindow(QMainWindow):
                                             sleep_()
                                             continue
                                         else:
-                                            if float(self.session.my_position(symbol="BTCUSD")['result'][
-                                                         'trailing_stop']) != '0':
+                                            # новый запрос после установки трейлинга
+                                            req_2 = self.session.my_position(symbol="BTCUSD")
+
+                                            if float(req_2['result']['trailing_stop']) != '0':
                                                 print(
                                                     f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
                                                 logger.info(f"placing a trailing-stop: {trigger_trailing}$ - ok!")
+                                                logger.info(f"rate_limit_status: {req_2['rate_limit_status']}")
+                                                logger.info(f"rate_limit_reset_ms: {req_2['rate_limit_reset_ms']}")
+                                                logger.info(f"rate_limit: {req_2['rate_limit']}")
                                                 break
 
                                 while self.status == "Untriggered":
