@@ -364,24 +364,20 @@ class MainWindow(QMainWindow):
                     self.cancel()
                     sleep_()
                     try:
-                        self.status = self.bot.show_order_status()
-                        order_id = \
-                            self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
-                                                                  order_status="Untriggered").result()[
-                                0]['result']['data'][0]['order_id']
+                        order_id = self.session.get_active_order(
+                            symbol="BTCUSD",
+                            order_status="Untriggered"
+                        )['result']['data'][0]['order_id']
+                    except IndexError as e:
+                        print(e)
+                        logger.exception(e, exc_info=True)
+                        sleep_()
+                        continue
                     except Exception as e:
                         print(e)
                         logger.exception(e, exc_info=True)
-                        if self.status != "Untriggered":
-                            self.status = self.bot.show_order_status()
-                            # На случай, если произошло очень резкое исполнение
-                            if self.status == "Filled":
-                                sleep_()
-                                self.cancel()
-                                break
-                            print(f'current_status: {self.status}')
-                            sleep_()
-                            continue
+                        sleep_()
+                        continue
                     else:
                         print(f"untriggered_order_id:{order_id}")
                         logger.info(f"untriggered_order_id:{order_id}")
@@ -478,15 +474,6 @@ class MainWindow(QMainWindow):
                         logger.info(f'Stop-Take Order was executed!')
                         self.update_redraw()
                         self.status = self.bot.show_order_status()
-
-                        # while self.status != "New":
-                        #     self.status = self.bot.show_order_status()
-                        #     if self.status == "Filled":
-                        #         print(f"FAST FILLED")
-                        #         logger.info(f"FAST FILLED")
-                        #         self.cancel()
-                        #     print(f'current_status: {self.status}')
-                        #     sleep(1)
 
                 elif not self.is_alive:
                     break
