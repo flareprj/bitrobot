@@ -206,45 +206,51 @@ class Strategy:
 
         #delta = int((_zone_25 - _zone_50) / 2)
         delta = 50
-        if price > _zone_25:
-            self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_25, tp=POC,
-                                         sl=_zone_25 - delta)
-        elif price > _zone_50:
-            self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_50, tp=_zone_25,
-                                         sl=_zone_50 - delta)
-        elif price > _zone_75:
-            self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_75, tp=_zone_50,
-                                         sl=_zone_75 - delta)
-        elif price > _zone_100:
-            self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_100, tp=_zone_75,
-                                         sl=_zone_100 - delta)
-        elif price > _zone_150:
-            self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_150, tp=_zone_100,
-                                         sl=_zone_150 - delta)
-        else:
-            print(f'Longs not found! POC:{POC}, price:{price}')
-            logger.info(f'Longs not found! POC:{POC}, price:{price}')
-            return 0
+        check_levels = 0
 
-        if price < zone_25:
-            self.data.create_limit_order("Sell", self.symbol, arr_l, zone_25, tp=POC,
-                                         sl=zone_25 + delta)
-        elif price < zone_50:
-            self.data.create_limit_order("Sell", self.symbol, arr_l, zone_50, tp=zone_25,
-                                         sl=zone_50 + delta)
-        elif price < zone_75:
-            self.data.create_limit_order("Sell", self.symbol, arr_l, zone_75, tp=zone_50,
-                                         sl=zone_75 + delta)
-        elif price < zone_100:
-            self.data.create_limit_order("Sell", self.symbol, arr_l, zone_100, tp=zone_75,
-                                         sl=zone_100 + delta)
-        elif price < zone_150:
-            self.data.create_limit_order("Sell", self.symbol, arr_l, zone_150, tp=zone_100,
-                                         sl=zone_150 + delta)
-        else:
-            print(f'Shorts not found! POC:{POC}, price:{price}')
-            logger.info(f'Shorts not found! POC:{POC}, price:{price}')
-            return 0
+        if check_levels == 0:
+            if price > _zone_25:
+                self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_25, tp=POC,
+                                             sl=_zone_25 - delta)
+            elif price > _zone_50:
+                self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_50, tp=_zone_25,
+                                             sl=_zone_50 - delta)
+            elif price > _zone_75:
+                self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_75, tp=_zone_50,
+                                             sl=_zone_75 - delta)
+            elif price > _zone_100:
+                self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_100, tp=_zone_75,
+                                             sl=_zone_100 - delta)
+            elif price > _zone_150:
+                self.data.create_limit_order("Buy", self.symbol, arr_l, _zone_150, tp=_zone_100,
+                                             sl=_zone_150 - delta)
+            else:
+                print(f'Longs not found! POC:{POC}, price:{price}')
+                logger.info(f'Longs not found! POC:{POC}, price:{price}')
+                check_levels = 1
+                return check_levels
+
+        if check_levels == 0:
+            if price < zone_25:
+                self.data.create_limit_order("Sell", self.symbol, arr_l, zone_25, tp=POC,
+                                             sl=zone_25 + delta)
+            elif price < zone_50:
+                self.data.create_limit_order("Sell", self.symbol, arr_l, zone_50, tp=zone_25,
+                                             sl=zone_50 + delta)
+            elif price < zone_75:
+                self.data.create_limit_order("Sell", self.symbol, arr_l, zone_75, tp=zone_50,
+                                             sl=zone_75 + delta)
+            elif price < zone_100:
+                self.data.create_limit_order("Sell", self.symbol, arr_l, zone_100, tp=zone_75,
+                                             sl=zone_100 + delta)
+            elif price < zone_150:
+                self.data.create_limit_order("Sell", self.symbol, arr_l, zone_150, tp=zone_100,
+                                             sl=zone_150 + delta)
+            else:
+                print(f'Shorts not found! POC:{POC}, price:{price}')
+                logger.info(f'Shorts not found! POC:{POC}, price:{price}')
+                check_levels = 1
+                return check_levels
 
     def draw_zones(self, interval, limit):
         price = self.data.show_last_price()

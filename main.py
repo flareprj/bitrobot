@@ -184,6 +184,7 @@ class MainWindow(QMainWindow):
             self.ui.w3.setText('0')
             self.ui.w4.setText('0')
             self.ui.w5.setText('0')
+
     @pyqtSlot()
     def get_data_init(self):
         self.api_key = self.ui.api_key.text()
@@ -293,6 +294,7 @@ class MainWindow(QMainWindow):
 
         self.is_alive = True
         if self.is_alive:
+            print(f"activeThreadCount(): {self.thread_manager.activeThreadCount()}")
             self.thread_manager.start(self.get_data)
 
     @pyqtSlot()
@@ -311,6 +313,10 @@ class MainWindow(QMainWindow):
                 res = self.create_2()
                 if res == 0:
                     return
+                elif res == 1:
+                    print('Need to find new levels, the search begins ..')
+                    logger.info('Need to find new levels, the search begins ..')
+                    self.stop_process(check_levels=1)
                 sleep_()
             else:
                 self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
@@ -492,12 +498,21 @@ class MainWindow(QMainWindow):
                 sleep(1)
 
     @pyqtSlot()
-    def stop_process(self):
+    def stop_process(self, check_levels=0):
         if self.is_alive:
             self.status = self.bot.show_order_status()
-            if self.status == "Untriggered" or self.status == "New":
+            if self.status == "Untriggered" or self.status == "New" or check_levels == 1:
                 res = self.cancel()
                 self.ui.textBrowser.append(f'{res}')
+                if check_levels == 1:
+                    self.ui.textBrowser.append(f'Find new levels..')
+                    list_tf = ['1', '3', '5', '15', '30', '60', '120', '240', '360', '720', 'D', 'W', 'M']
+                    current_tf = self.ui.lineEdit_3.text()
+                    for i, tf in enumerate(list_tf, start=0):
+                        if tf == current_tf:
+                            self.ui.lineEdit_3.setText(list_tf[i - 1])
+                            self.get_data()
+                            break
             self.is_alive = False
             self.ui.textBrowser.append(f"Stop receiving the data, time:{datetime.now()}")
             print(f"Stop receiving the data, time:{datetime.now()}")
@@ -623,6 +638,10 @@ class MainWindow(QMainWindow):
 
     def draw_2(self):
         obj = Strategy(self.radio, "BTCUSD", self.api_key, self.api_secret, MainWindow)
+
+        #print(f'BEFORE UPDATE: {self.interval}')
+        self.interval = self.ui.lineEdit_3.text()
+        #print(f'AFTER UPDATE: {self.interval}')
 
         self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_100, self._zone_150, self.zone_150, self.zone_100, \
         self.zone_75, self.zone_50, self.zone_25, df, self.POC, self.price, found_zone_150, found_zone_100, found_zone_75, found_zone_50, \
