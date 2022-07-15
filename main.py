@@ -327,6 +327,9 @@ class MainWindow(QMainWindow):
                 print(f'current_status: {self.status}')
                 logger.info(f'current_status: {self.status}')
                 if self.status == "New":
+                    print('the levels found!')
+                    self.ui.textBrowser.append('the levels found!')
+                    logger.info('the levels found!')
                     while self.status == "New":
                         elapsed_time = self.timer
                         while elapsed_time > 0 and self.status == "New":
@@ -338,10 +341,10 @@ class MainWindow(QMainWindow):
                                         print(f'current_status: {self.status}, try again..')
                                         logger.info(f'current_status: {self.status}, try again..')
                                         sleep_()
-                                #live_price = self.bot.get_live_price() + '$'
-                                #live_pnl = '0 BTC'
-                                #self.ui.label_12.setText(live_price)
-                                #self.ui.label_15.setText(live_pnl)
+                                live_price = self.bot.get_live_price() + '$'
+                                live_pnl = '0 BTC'
+                                self.ui.label_12.setText(live_price)
+                                self.ui.label_15.setText(live_pnl)
                                 if self.status == "Untriggered" or not self.is_alive:
                                     break
                                 print(f"\relapsed_time: {elapsed_time}sec", end='')
@@ -394,7 +397,6 @@ class MainWindow(QMainWindow):
                                 side = req_pos['side']
 
                                 print(f"take_profit: {take_profit}")
-                                #print(f"last_price: {last_price}")
                                 print(f"entry_price: {entry_price}")
                                 print(f"side: {side}")
                                 logger.info(
@@ -454,13 +456,12 @@ class MainWindow(QMainWindow):
                                 while self.status == "Untriggered":
                                     try:
                                         self.status = self.bot.show_order_status()
-                                        #price = self.bot.get_live_price()
-                                        #live_price = price + '$'
-                                        #live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
-                                        #self.ui.label_12.setText(live_price)
-                                        #self.ui.label_15.setText(live_pnl)
-                                        print(f"\r{self.status}", end='')
-                                        #print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
+                                        price = self.bot.get_live_price()
+                                        live_price = price + '$'
+                                        live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
+                                        self.ui.label_12.setText(live_price)
+                                        self.ui.label_15.setText(live_pnl)
+                                        print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
                                         sleep_()
                                         if self.status != "Untriggered":
                                             logger.info(f"IF BLOCK, {self.status}")
@@ -501,10 +502,9 @@ class MainWindow(QMainWindow):
         if self.is_alive:
             self.status = self.bot.show_order_status()
             if self.status == "Untriggered" or self.status == "New" or check_levels == 1:
-                res = self.cancel()
-                self.ui.textBrowser.append(f'{res}')
+                self.cancel()
                 if check_levels == 1:
-                    self.ui.textBrowser.append(f'Find new levels..')
+                    self.ui.textBrowser.append(f'finding new levels..')
                     list_tf = ['1', '3', '5', '15', '30', '60', '120', '240', '360', '720', 'D', 'W', 'M']
                     current_tf = self.ui.lineEdit_3.text()
                     for i, tf in enumerate(list_tf, start=0):
@@ -517,8 +517,11 @@ class MainWindow(QMainWindow):
             print(f"Stop receiving the data, time:{datetime.now()}")
             logger.info(f"Stop receiving the data")
             self.update_scrollbar()
+            self.ui.startButton.setEnabled(True)
+            return
         if not self.ui.startButton.isEnabled():
             self.ui.startButton.setEnabled(True)
+            return
 
     def update_redraw(self):
         self.cancel()
@@ -736,7 +739,6 @@ class MainWindow(QMainWindow):
     def cancel(self):
         res = self.bot.cancel_orders()
         if not self.ui.checkAuto.isChecked():
-            self.ui.textBrowser.append(f"{res}")
             self.update_scrollbar()
         return res
 

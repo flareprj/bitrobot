@@ -28,7 +28,7 @@ class Strategy:
         else:
             result_code = result[0]['ret_code']
             if result_code == 0:
-                print('All orders cancelled successfully!')
+                print('\nAll orders cancelled successfully!')
                 logger.info('All orders cancelled successfully!')
                 return 'All orders cancelled successfully!'
             else:
