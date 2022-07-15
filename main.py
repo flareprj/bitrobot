@@ -294,7 +294,6 @@ class MainWindow(QMainWindow):
 
         self.is_alive = True
         if self.is_alive:
-            print(f"activeThreadCount(): {self.thread_manager.activeThreadCount()}")
             self.thread_manager.start(self.get_data)
 
     @pyqtSlot()
@@ -314,8 +313,8 @@ class MainWindow(QMainWindow):
                 if res == 0:
                     return
                 elif res == 1:
-                    print('Need to find new levels, the search begins ..')
-                    logger.info('Need to find new levels, the search begins ..')
+                    print('Need to find new levels, the search begins..')
+                    logger.info('Need to find new levels, the search begins..')
                     self.stop_process(check_levels=1)
                 sleep_()
             else:
@@ -639,9 +638,7 @@ class MainWindow(QMainWindow):
     def draw_2(self):
         obj = Strategy(self.radio, "BTCUSD", self.api_key, self.api_secret, MainWindow)
 
-        #print(f'BEFORE UPDATE: {self.interval}')
         self.interval = self.ui.lineEdit_3.text()
-        #print(f'AFTER UPDATE: {self.interval}')
 
         self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_100, self._zone_150, self.zone_150, self.zone_100, \
         self.zone_75, self.zone_50, self.zone_25, df, self.POC, self.price, found_zone_150, found_zone_100, found_zone_75, found_zone_50, \
