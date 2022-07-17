@@ -99,6 +99,7 @@ class MainWindow(QMainWindow):
         self.ui.createButton.clicked.connect(self.create)
         self.ui.cancelButton.clicked.connect(self.cancel)
         self.ui.resetButton.clicked.connect(self.reset)
+        self.ui.checkAuto.clicked.connect(self.disable_areas)
 
         self.ui.actionExit.triggered.connect(lambda: QApplication.quit())
         self.ui.actionAbout.triggered.connect(self.about)
@@ -169,6 +170,17 @@ class MainWindow(QMainWindow):
         scrollIsAtEnd = verScrollBar.maximum() - verScrollBar.value() >= 10
         if scrollIsAtEnd:
             verScrollBar.setValue(verScrollBar.maximum())
+
+    @pyqtSlot()
+    def disable_areas(self):
+        if not self.ui.checkAuto.isChecked():
+            self.ui.trailing_stop.setEnabled(False)
+            self.ui.timer.setEnabled(False)
+            self.reset()
+        else:
+            self.ui.trailing_stop.setEnabled(True)
+            self.ui.timer.setEnabled(True)
+            self.reset()
 
     @pyqtSlot()
     def reset(self):
@@ -395,6 +407,7 @@ class MainWindow(QMainWindow):
                                 take_profit = float(req_pos['take_profit'])
                                 entry_price = float(req_pos['entry_price'])
                                 side = req_pos['side']
+                                sl_change = 0
 
                                 print(f"take_profit: {take_profit}")
                                 print(f"entry_price: {entry_price}")
@@ -461,20 +474,40 @@ class MainWindow(QMainWindow):
                                         live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
                                         self.ui.label_12.setText(live_price)
                                         self.ui.label_15.setText(live_pnl)
-                                        print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
-                                        sleep_()
+
+
+                                        if side == "Buy" and float(price) > float(trigger_trailing-int(self.ui.trailing_stop.text()))+10 and sl_change == 0:
+                                            try:
+                                                res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(entry_price-((trigger_trailing-entry_price)/2)))
+                                                if res['ret_code'] == 0:
+                                                    print(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                                    logger.info(f'SL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                                    sl_change = 1
+                                            except Exception as e:
+                                                print(e)
+                                        if side == "Sell" and float(price) < float(trigger_trailing+int(self.ui.trailing_stop.text()))-10 and sl_change == 0:
+                                            try:
+                                                res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(entry_price-((entry_price-trigger_trailing)/2)))
+                                                if res['ret_code'] == 0:
+                                                    print(f'\nSL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                                    logger.info(f'SL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                                    sl_change = 1
+                                            except Exception as e:
+                                                print(e)
+
+
+                                        print(f"\r{live_pnl}, entry_price:{round(entry_price, 2)}$", end='')
+                                        sleep(1)
                                         if self.status != "Untriggered":
                                             logger.info(f"IF BLOCK, {self.status}")
                                             break
                                     except http.client.RemoteDisconnected as e:
                                         logger.error(f"RemoteDisconnected, {e}")
                                         sleep_()
-                                        continue
                                     except Exception as e:
                                         print(e)
                                         logger.exception(e, exc_info=True)
                                         sleep_()
-                                        continue
 
                         print(f'\nStop-Take Order was executed! time:{datetime.now()}')
                         logger.info(f'Stop-Take Order was executed!')

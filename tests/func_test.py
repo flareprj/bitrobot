@@ -1,4 +1,6 @@
 import http.client
+
+from pybit import inverse_perpetual
 from pybit.inverse_perpetual import HTTP
 from unittest import TestCase
 from modules.strategy import *
@@ -261,140 +263,29 @@ class WhileLoop(TestCase):
         self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
         self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
                             api_secret=self.api_secret)
-        self.timer = 5
-        self.price = self.data.show_last_price()
 
     def test_New(self):
-        self.data.create_limit_order(side="Buy", symbol="BTCUSD", quantity=1, price=self.price-15, tp=self.price+100, sl=self.price-50)
-        self.data.create_limit_order(side="Sell", symbol="BTCUSD", quantity=1, price=self.price+15, tp=self.price-100, sl=self.price+50)
-        sleep_()
-        while True:
-            self.status = self.bot.show_order_status()
-            print(f'current_status: {self.status}')
-            if self.status == "New":
-                elapsed_time = self.timer
-                while elapsed_time > 0 and self.status == "New":
-                    self.status = self.bot.show_order_status()
-                    if self.status == "Untriggered":
-                        break
-                    print(f"\relapsed_time: {elapsed_time}sec", end='')
-                    elapsed_time -= 1
-                    sleep(1)
-            elif self.status == "Untriggered":
-                print("We have Untriggered order! Cancel another orders!")
-                self.bot.cancel_orders()
-                #sleep_()
-                try:
-                    self.status = self.bot.show_order_status()
-                    order_id = \
-                        self.bot.client.Order.Order_getOrders(symbol="BTCUSD",
-                                                              order_status="Untriggered").result()[
-                            0]['result']['data'][0]['order_id']
-                except Exception as e:
-                    print(e)
-                    logger.exception(e, exc_info=True)
-                    if self.status != "Untriggered":
-                        self.status = self.bot.show_order_status()
-                        # На случай, если произошло очень резкое исполнение
-                        if self.status == "Filled":
-                            self.bot.cancel_orders()
-                        print(f'current_status: {self.status}')
-                        sleep(1)
-                else:
-                    print(f"untriggered_order_id:{order_id}")
-                    while self.status == "Untriggered":
-                        try:
-                            sleep_()
-                            take_profit = float(
-                                self.bot.client.Positions.Positions_myPosition(symbol="BTCUSD").result()[0][
-                                    'result']['take_profit'])
-                            sleep_()
-                            last_price = float(self.bot.get_live_price())
-                            sleep_()
-                            entry_price = float(self.session.my_position(symbol="BTCUSD")['result']['entry_price'])
-                            sleep_()
-                            side = self.session.my_position(symbol="BTCUSD")['result']['side']
-                            sleep_()
+        i = 5
+        while i > 0:
+            try:
+                last_price = float(self.session.latest_information_for_symbol(
+                    symbol="BTCUSD"
+                )['result'][0]['last_price'])
 
-                            print(f"take_profit: {take_profit}")
-                            print(f"last_price: {last_price}")
-                            print(f"entry_price: {entry_price}")
-                            print(f"side: {side}")
+            except http.client.RemoteDisconnected as e:
+                print(repr(e), e)
+                logger.error(f"RemoteDisconnected, {e}")
+                sleep_()
+            except requests.exceptions.ConnectionError as e:
+                print(repr(e), e)
+                logger.exception(repr(e), e, exc_info=True)
+                sleep_()
+            except Exception as e:
+                print(repr(e), e)
+                logger.exception(repr(e), e, exc_info=True)
+                sleep_()
+            else:
+                print(f"price: {last_price}, +{int(last_price+last_price*0.012)}, -{int(last_price-last_price*0.012)}, diff:{int(last_price*0.012)}. sl+:{int(last_price+last_price*0.007)}")
+                sleep_()
+                i -= 1
 
-                        except http.client.RemoteDisconnected as e:
-                            print(repr(e), e)
-                            logger.error(f"RemoteDisconnected, {e}")
-                            sleep_()
-                        except requests.exceptions.ConnectionError as e:
-                            print(repr(e), e)
-                            logger.exception(repr(e), e, exc_info=True)
-                            sleep_()
-                        except Exception as e:
-                            print(repr(e), e)
-                            logger.exception(repr(e), e, exc_info=True)
-                            sleep_()
-                        else:
-                            if take_profit > entry_price:
-                                trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
-                                print(f"\ntrigger_trailing: {trigger_trailing}$")
-                                logger.info(f"trigger_trailing: {trigger_trailing}$")
-                            elif take_profit < entry_price:
-                                trigger_trailing = int(entry_price - abs((take_profit - entry_price) / 2))
-                                print(f"\ntrigger_trailing: {trigger_trailing}$")
-                                logger.info(f"trigger_trailing: {trigger_trailing}$")
-                            else:
-                                break
-
-                            while True:
-                                active_pos = self.session.my_position(symbol="BTCUSD")['result']['size']
-                                if active_pos != 0 and active_pos is not None:
-                                    try:
-                                        self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
-                                                                      trailing_stop='25',
-                                                                      new_trailing_active=trigger_trailing)
-                                    except Exception as e:
-                                        print(e)
-                                        logger.exception(f"{e}", exc_info=True)
-                                        sleep_()
-                                    else:
-                                        if float(self.session.my_position(symbol="BTCUSD")['result'][
-                                                     'trailing_stop']) != '0':
-                                            print(
-                                                f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
-                                            logger.info(f"placing a trailing-stop: {trigger_trailing}$ - ok!")
-                                            break
-
-                            while self.status == "Untriggered":
-                                try:
-                                    self.status = self.bot.show_order_status()
-                                    sleep(1)
-                                    live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
-                                    print(f"\r{live_pnl}, entry_price:{entry_price}$", end='')
-                                    sleep_()
-                                    if self.status != "Untriggered":
-                                        print(f"IF BLOCK, {self.status}")
-                                        logger.info(f"IF BLOCK, {self.status}")
-                                        break
-                                except http.client.RemoteDisconnected as e:
-                                    logger.error(f"RemoteDisconnected, {e}")
-                                    sleep_()
-                                except Exception as e:
-                                    print(e)
-                                    logger.exception(repr(e), e, exc_info=True)
-                                    sleep_()
-
-                    print(f'\nStop-Take Order was executed! time:{datetime.now()}')
-                    self.bot.cancel_orders()
-                    self.price = self.data.show_last_price()
-                    self.data.create_limit_order(side="Buy", symbol="BTCUSD", quantity=1, price=self.price - 15,
-                                                 tp=self.price + 100, sl=self.price - 50)
-                    self.data.create_limit_order(side="Sell", symbol="BTCUSD", quantity=1, price=self.price + 15,
-                                                 tp=self.price - 100, sl=self.price + 50)
-                    self.status = self.bot.show_order_status()
-                    while self.status != "New":
-                        self.status = self.bot.show_order_status()
-                        # На случай, если произошло очень резкое исполнение
-                        if self.status == "Filled":
-                            self.bot.cancel_orders()
-                        print(f'current_status: {self.status}')
-                        sleep(1)
