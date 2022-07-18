@@ -478,7 +478,7 @@ class MainWindow(QMainWindow):
 
                                         if side == "Buy" and float(price) > float(trigger_trailing-int(self.ui.trailing_stop.text()))+10 and sl_change == 0:
                                             try:
-                                                res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(entry_price-((trigger_trailing-entry_price)/2)))
+                                                res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(entry_price+((trigger_trailing-entry_price)/2)))
                                                 if res['ret_code'] == 0:
                                                     print(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                                     logger.info(f'SL has been replaced! New price:{res["result"]["stop_loss"]}$')
