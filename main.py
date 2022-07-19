@@ -66,7 +66,7 @@ class MainWindow(QMainWindow):
         self.api_secret = None
         self.radio = None
         self.w1 = self.w2 = self.w3 = self.w4 = self.w5 = None
-        self.order_weights = [0.1, 0, 0, 0, 0]
+        self.order_weights = [10, 0, 0, 0, 0]
         self.arr_l = self.arr_s = None
 
         self.ui = Ui_MainWindow()
@@ -185,13 +185,13 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def reset(self):
         if not self.ui.checkAuto.isChecked():
-            self.ui.w1.setText('0.1')
-            self.ui.w2.setText('0.19')
-            self.ui.w3.setText('0.3')
-            self.ui.w4.setText('0.45')
-            self.ui.w5.setText('1')
+            self.ui.w1.setText('10')
+            self.ui.w2.setText('19')
+            self.ui.w3.setText('30')
+            self.ui.w4.setText('45')
+            self.ui.w5.setText('100')
         else:
-            self.ui.w1.setText('0.1')
+            self.ui.w1.setText('10')
             self.ui.w2.setText('0')
             self.ui.w3.setText('0')
             self.ui.w4.setText('0')
@@ -475,8 +475,9 @@ class MainWindow(QMainWindow):
                                         self.ui.label_12.setText(live_price)
                                         self.ui.label_15.setText(live_pnl)
 
+                                        delta_breakeven = 25
 
-                                        if side == "Buy" and float(price) > float(trigger_trailing-int(self.ui.trailing_stop.text()))+10 and sl_change == 0:
+                                        if side == "Buy" and float(price) > float(trigger_trailing-int(self.ui.trailing_stop.text()))+delta_breakeven and sl_change == 0:
                                             try:
                                                 res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(entry_price+((trigger_trailing-entry_price)/2)))
                                                 if res['ret_code'] == 0:
@@ -485,7 +486,7 @@ class MainWindow(QMainWindow):
                                                     sl_change = 1
                                             except Exception as e:
                                                 print(e)
-                                        if side == "Sell" and float(price) < float(trigger_trailing+int(self.ui.trailing_stop.text()))-10 and sl_change == 0:
+                                        if side == "Sell" and float(price) < float(trigger_trailing+int(self.ui.trailing_stop.text()))-delta_breakeven and sl_change == 0:
                                             try:
                                                 res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(entry_price-((entry_price-trigger_trailing)/2)))
                                                 if res['ret_code'] == 0:
@@ -494,7 +495,6 @@ class MainWindow(QMainWindow):
                                                     sl_change = 1
                                             except Exception as e:
                                                 print(e)
-
 
                                         print(f"\r{live_pnl}, entry_price:{round(entry_price, 2)}$", end='')
                                         sleep(1)

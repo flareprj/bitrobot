@@ -204,8 +204,7 @@ class Strategy:
     def create_2_orders(self, arr_l, _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100,
                         zone_75, zone_50, zone_25, price, POC):
 
-        #delta = int((_zone_25 - _zone_50) / 2)
-        delta = 50
+        delta = 25
         check_levels = 0
 
         if check_levels == 0:
@@ -295,7 +294,7 @@ class Strategy:
     @staticmethod
     def count_contracts(price, available_balance, leverage, percent):
         fees = 1 - (0.00075 * 2)
-        return int(price * available_balance * leverage * percent * fees)
+        return int(price * available_balance * leverage * percent/100 * fees)
 
     @staticmethod
     def margin():

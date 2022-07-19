@@ -3,7 +3,7 @@ import pprint
 
 def count_deposit(price, available_balance, leverage, percent):
     fees = 1 - (0.00075 * 2)
-    return int(price * available_balance * leverage * percent * fees)
+    return int(price * available_balance * leverage * percent/100 * fees)
 
 
 def fills(deposit, qty_l, qty_s, orders_weights):
@@ -12,14 +12,14 @@ def fills(deposit, qty_l, qty_s, orders_weights):
 
     while deposit > 0:
         for index, w in enumerate(orders_weights):
-            if orders_weights[index] == 0:
+            if orders_weights[index]/100 == 0:
                 res1.insert(index, 0)
                 res2.insert(index, 0)
                 if index == 4:
                     deposit = 0
                     break
             else:
-                item = int(deposit * orders_weights[index])
+                item = int(deposit * orders_weights[index]/100)
                 res1.insert(index, item)
                 res2.insert(index, item)
                 deposit -= item
@@ -66,7 +66,7 @@ def calc_orders(deposit, qty_l, qty_s, list_max):
 
     i = 0
     while deposit > 0 and i < qty_l:
-        item = int(deposit * arr_l[i])
+        item = int(deposit * arr_l[i]/100)
         result_l.append(item)
         deposit -= item
         i += 1
@@ -76,7 +76,7 @@ def calc_orders(deposit, qty_l, qty_s, list_max):
 
     i = 0
     while deposit_save > 0 and i < qty_s:
-        item = int(deposit_save * arr_s[i])
+        item = int(deposit_save * arr_s[i]/100)
         result_s.append(item)
         deposit_save -= item
         i += 1
@@ -120,10 +120,10 @@ def calc_orders(deposit, qty_l, qty_s, list_max):
 
 
 if __name__ == "__main__":
-    deposit = 100
-    orders_weights = [0.1, 0.19, 0.3, 0.45, 1]
+    deposit = 50
+    orders_weights = [10, 19, 30, 45, 100]
 
-    # orders_weights = [0.1, 0, 0, 0, 0]
-    # print(calc_orders(deposit, 5, 5, orders_weights))
+    #orders_weights = [100, 0, 0, 0, 0]
+    print(calc_orders(deposit, 5, 5, orders_weights))
 
 
