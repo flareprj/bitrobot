@@ -174,6 +174,10 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def disable_areas(self):
         if not self.ui.checkAuto.isChecked():
+            if self.ui.trailing_stop.text() == '':
+                self.ui.trailing_stop.setText('50')
+            if self.ui.timer.text() == '':
+                self.ui.timer.setText('500')
             self.ui.trailing_stop.setEnabled(False)
             self.ui.timer.setEnabled(False)
             self.reset()
@@ -380,9 +384,7 @@ class MainWindow(QMainWindow):
                 elif self.status == "Untriggered":
                     print("We have Untriggered order! Cancel another orders!")
                     logger.info(f"We have Untriggered order! Cancel another orders!")
-                    sleep_()
                     self.cancel()
-                    sleep_()
                     try:
                         order_id = self.session.get_active_order(
                             symbol="BTCUSD",
@@ -407,6 +409,7 @@ class MainWindow(QMainWindow):
                                 take_profit = float(req_pos['take_profit'])
                                 entry_price = float(req_pos['entry_price'])
                                 side = req_pos['side']
+                                size = req_pos['size']
                                 sl_change = 0
 
                                 print(f"take_profit: {take_profit}")
@@ -418,17 +421,14 @@ class MainWindow(QMainWindow):
                                 print(repr(e), e)
                                 logger.error(f"RemoteDisconnected, {e}")
                                 sleep_()
-                                continue
                             except requests.exceptions.ConnectionError as e:
                                 print(repr(e), e)
                                 logger.exception(e, exc_info=True)
                                 sleep_()
-                                continue
                             except Exception as e:
                                 print(repr(e), e)
                                 logger.exception(e, exc_info=True)
                                 sleep_()
-                                continue
                             else:
                                 if take_profit > entry_price:
                                     trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
@@ -441,22 +441,23 @@ class MainWindow(QMainWindow):
                                 else:
                                     break
 
-                                while True:
-                                    active_pos = req_pos['size']
-                                    if active_pos != 0 and active_pos is not None:
+                                if size != 0 and size is not None:
+                                    try:
+                                        self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
+                                                                      trailing_stop=self.trailing_stop,
+                                                                      new_trailing_active=trigger_trailing)
+                                    except Exception as e:
+                                        print(e)
+                                        logger.exception(f"{e}", exc_info=True)
+                                        sleep_()
+                                    else:
                                         try:
-                                            self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
-                                                                          trailing_stop=self.trailing_stop,
-                                                                          new_trailing_active=trigger_trailing)
+                                            req_2 = self.session.my_position(symbol="BTCUSD")
                                         except Exception as e:
                                             print(e)
                                             logger.exception(f"{e}", exc_info=True)
                                             sleep_()
-                                            continue
                                         else:
-                                            # новый запрос после установки трейлинга
-                                            req_2 = self.session.my_position(symbol="BTCUSD")
-
                                             if float(req_2['result']['trailing_stop']) != '0':
                                                 print(
                                                     f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
@@ -464,7 +465,9 @@ class MainWindow(QMainWindow):
                                                 logger.info(f"rate_limit_status: {req_2['rate_limit_status']}")
                                                 logger.info(f"rate_limit_reset_ms: {req_2['rate_limit_reset_ms']}")
                                                 logger.info(f"rate_limit: {req_2['rate_limit']}")
-                                                break
+                                            else:
+                                                print(f"error when placing a trailing-stop! time:{datetime.now()}")
+                                                logger.info(f"error when placing a trailing-stop!")
 
                                 while self.status == "Untriggered":
                                     try:
@@ -637,17 +640,20 @@ class MainWindow(QMainWindow):
 
         self.arr_l, self.arr_s = fills(deposit, qty_l, qty_s, self.order_weights)
 
-        self.ui.w1_2.setText(str(self.arr_l[0]))
-        self.ui.w2_2.setText(str(self.arr_l[1]))
-        self.ui.w3_2.setText(str(self.arr_l[2]))
-        self.ui.w4_2.setText(str(self.arr_l[3]))
-        self.ui.w5_2.setText(str(self.arr_l[4]))
+        try:
+            self.ui.w1_2.setText(str(self.arr_l[0]))
+            self.ui.w2_2.setText(str(self.arr_l[1]))
+            self.ui.w3_2.setText(str(self.arr_l[2]))
+            self.ui.w4_2.setText(str(self.arr_l[3]))
+            self.ui.w5_2.setText(str(self.arr_l[4]))
 
-        self.ui.w1_3.setText(str(self.arr_s[0]))
-        self.ui.w2_3.setText(str(self.arr_s[1]))
-        self.ui.w3_3.setText(str(self.arr_s[2]))
-        self.ui.w4_3.setText(str(self.arr_s[3]))
-        self.ui.w5_3.setText(str(self.arr_s[4]))
+            self.ui.w1_3.setText(str(self.arr_s[0]))
+            self.ui.w2_3.setText(str(self.arr_s[1]))
+            self.ui.w3_3.setText(str(self.arr_s[2]))
+            self.ui.w4_3.setText(str(self.arr_s[3]))
+            self.ui.w5_3.setText(str(self.arr_s[4]))
+        except IndexError as e:
+            logger.exception(f"{e}", exc_info=True)
 
         self.ui.textBrowser.append(f"******LONGS******")
         self.ui.textBrowser.append(f"-150: {self._zone_150}$ --- {found_zone_150}")
@@ -718,17 +724,20 @@ class MainWindow(QMainWindow):
 
         self.arr_l, self.arr_s = fills(deposit, qty_l, qty_s, self.order_weights)
 
-        self.ui.w1_2.setText(str(self.arr_l[0]))
-        self.ui.w2_2.setText(str(self.arr_l[1]))
-        self.ui.w3_2.setText(str(self.arr_l[2]))
-        self.ui.w4_2.setText(str(self.arr_l[3]))
-        self.ui.w5_2.setText(str(self.arr_l[4]))
+        try:
+            self.ui.w1_2.setText(str(self.arr_l[0]))
+            self.ui.w2_2.setText(str(self.arr_l[1]))
+            self.ui.w3_2.setText(str(self.arr_l[2]))
+            self.ui.w4_2.setText(str(self.arr_l[3]))
+            self.ui.w5_2.setText(str(self.arr_l[4]))
 
-        self.ui.w1_3.setText(str(self.arr_s[0]))
-        self.ui.w2_3.setText(str(self.arr_s[1]))
-        self.ui.w3_3.setText(str(self.arr_s[2]))
-        self.ui.w4_3.setText(str(self.arr_s[3]))
-        self.ui.w5_3.setText(str(self.arr_s[4]))
+            self.ui.w1_3.setText(str(self.arr_s[0]))
+            self.ui.w2_3.setText(str(self.arr_s[1]))
+            self.ui.w3_3.setText(str(self.arr_s[2]))
+            self.ui.w4_3.setText(str(self.arr_s[3]))
+            self.ui.w5_3.setText(str(self.arr_s[4]))
+        except IndexError as e:
+            logger.exception(f"{e}", exc_info=True)
 
         self.ui.label_10.setText(str(self.POC) + '$')
 

@@ -16,7 +16,7 @@ logger = logging.getLogger('app_logger')
 
 
 def sleep_():
-    sleep(randint(1, 8))
+    sleep(randint(1, 3))
 
 
 def is_internet():
@@ -41,6 +41,8 @@ def exx(func):
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
+        except SystemExit as e:
+            logger.error(f"{e}", exc_info=True)
         except ValueError as e:
             logger.exception(f'ValueError: {e}', exc_info=True)
             sleep_()

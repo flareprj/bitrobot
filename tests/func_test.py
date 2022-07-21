@@ -1,9 +1,12 @@
 import http.client
 
+import matplotlib
+from matplotlib import pyplot as plt
 from pybit import inverse_perpetual
 from pybit.inverse_perpetual import HTTP
 from unittest import TestCase
 from modules.strategy import *
+import pandas as pd
 
 
 class UpdateOrders(TestCase):
@@ -258,19 +261,20 @@ class WhileLoop(TestCase):
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
         self.api_key = '0ufzW85gpidJWYdN7Q'
         self.api_secret = 'eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa'
-        self.bot = Strategy(test=False, symbol="BTCUSD", api_key='0ufzW85gpidJWYdN7Q',
-                            api_secret='eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa', app=None)
-        self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
         self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
                             api_secret=self.api_secret)
 
     def test_New(self):
-        i = 5
-        while i > 0:
+            # df = pd.DataFrame({
+            #     'length': [1.5, 0.5, 1.2, 0.9, 3],
+            #     'width': [0.7, 0.2, 0.15, 0.2, 1.1]
+            # }, index=['pig', 'rabbit', 'duck', 'chicken', 'horse'])
+            # df.hist(bins=3)
+            # plt.hist(df)
+            # plt.show()
+
             try:
-                last_price = float(self.session.latest_information_for_symbol(
-                    symbol="BTCUSD"
-                )['result'][0]['last_price'])
+                order_book = self.session.orderbook(symbol="BTCUSD")['result']
 
             except http.client.RemoteDisconnected as e:
                 print(repr(e), e)
@@ -285,7 +289,7 @@ class WhileLoop(TestCase):
                 logger.exception(repr(e), e, exc_info=True)
                 sleep_()
             else:
-                print(f"price: {last_price}, +{int(last_price+last_price*0.012)}, -{int(last_price-last_price*0.012)}, diff:{int(last_price*0.012)}. sl+:{int(last_price+last_price*0.007)}")
-                sleep_()
-                i -= 1
+                pprint.pprint(f"{order_book}")
+                print(len(order_book))
+
 
