@@ -11,8 +11,9 @@ from time import sleep
 from pybit import inverse_perpetual
 import pandas as pd
 import logging
-#from matplotlib import interactive
-#interactive(True)
+from matplotlib import interactive
+
+interactive(True)
 logging.basicConfig(filename="pybit.log", level=logging.DEBUG,
                     format="%(asctime)s %(levelname)s %(message)s")
 
@@ -28,17 +29,18 @@ spread = 0
 xdata = []
 ydata = []
 
-# ws_inverse = inverse_perpetual.WebSocket(
-#     test=True,
-#     #api_key="0ufzW85gpidJWYdN7Q",
-#     #api_secret="eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa",
-#     domain="bybit",
-#     # ping_interval=60,
-#     # ping_timeout=45
-# )
-
-
-
+ws_inverse = inverse_perpetual.WebSocket(
+    test=True,
+    # api_key="0ufzW85gpidJWYdN7Q",
+    # api_secret="eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa",
+    domain="bybit",
+    # ping_interval=60,
+    # ping_timeout=45
+)
+fig, (ax, ax1) = plt.subplots(1, 2)
+ax.grid(True)
+ax1.grid(True)
+fig.tight_layout()
 
 
 #
@@ -53,10 +55,8 @@ ydata = []
 
 def show_graph(a, b):
     a.plot('price', 'size', ax=ax)
-    b.plot('price', 'size', ax=ax)
-
+    b.plot('price', 'size', ax=ax1)
     plt.show()
-
     ax.cla()
     plt.pause(0.5)
 
@@ -75,13 +75,11 @@ def handle_info(message):
 def handle_orderbook(message):
     global str_bids, str_asks, ask_price, bid_price, spread, a, b
 
-    bids.clear()
-    asks.clear()
-
-    # pprint.pprint(message['data'])
-    # print(len(message['data']))
+    # bids.clear()
+    # asks.clear()
 
     df = pd.DataFrame(message['data'])
+    #pprint.pprint(df)
 
     df[['price', 'size']] = df[['price', 'size']].apply(pd.to_numeric, errors='coerce')
 
@@ -89,9 +87,9 @@ def handle_orderbook(message):
     b = df[df.side == 'Sell']
 
     a.plot('price', 'size', ax=ax)
-    b.plot('price', 'size', ax=ax)
+    b.plot('price', 'size', ax=ax1)
 
-    # show_graph(a, b)
+    sleep(5)
 
     # for elem in message['data']:
     #     for key in elem.keys():
@@ -114,49 +112,41 @@ def handle_orderbook(message):
     # print(f"{str_bids}, {str_asks}, spread:{spread}")
 
 
-if __name__ == '__main__':
-    session_unauth = inverse_perpetual.HTTP(
-        endpoint="https://api-testnet.bybit.com"
-    )
-    res = session_unauth.orderbook(symbol="BTCUSD")['result']
-
-    df = pd.DataFrame(res)
-    pprint.pprint(df)
-    df[['price', 'size']] = df[['price', 'size']].apply(pd.to_numeric, errors='coerce')
-
-    a = df[df.side == 'Buy']
-    b = df[df.side == 'Sell']
-
-    fig, (ax, ax1) = plt.subplots(1, 2)
-
-    a.plot('price', 'size', ax=ax)
-    b.plot('price', 'size', ax=ax1)
-
-    ax.grid(True)
-    ax1.grid(True)
-
-    fig.tight_layout()
-    fig.show()
-
-    plt.show()
-
-# ws_inverse.orderbook_25_stream(handle_orderbook, "BTCUSD")
+ws_inverse.orderbook_200_stream(handle_orderbook, "BTCUSD")
 # ws_inverse.instrument_info_stream(handle_info, "BTCUSD")
 
-# while True:
-#     ax.cla()
-#     plt.pause(1)
+
+# if __name__ == '__main__':
+#     session_unauth = inverse_perpetual.HTTP(
+#         endpoint="https://api-testnet.bybit.com"
+#     )
+#     res = session_unauth.orderbook(symbol="BTCUSD")['result']
+#
+#     df = pd.DataFrame(res)
+#     pprint.pprint(df)
+#     df[['price', 'size']] = df[['price', 'size']].apply(pd.to_numeric, errors='coerce')
+#
+#     a = df[df.side == 'Buy']
+#     b = df[df.side == 'Sell']
+#
+#     fig, (ax, ax1) = plt.subplots(1, 2)
+#
+#     a.plot('price', 'size', ax=ax)
+#     b.plot('price', 'size', ax=ax1)
+#
+#     ax.grid(True)
+#     ax1.grid(True)
+#
+#     fig.tight_layout()
+#     fig.show()
+#
 #     plt.show()
-# show_hist(list(accumulate(bids, operator.add)), list(accumulate(asks, operator.add)), bid=bids, ask=asks)
-# show_hist(bids, asks)
 
-#    sleep(5)
-#    break
-#    update_graph()
 
-# To subscribe to private data, the process is the same:
-# def handle_position(message):
-# I will be called every time there is new position data!
-#    print(message)
+while True:
+    fig.show()
+    plt.show()
+    plt.pause(5)
 
-# ws_inverse.position_stream(handle_position)
+    ax.cla()
+    ax1.cla()
