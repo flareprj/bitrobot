@@ -2,7 +2,7 @@ import operator
 import pprint
 import time
 import random
-
+from datetime import datetime
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
@@ -24,41 +24,16 @@ str_asks = ''
 ask_price = 0
 bid_price = 0
 spread = 0
-# a = pd.DataFrame(data=None)
-# b = pd.DataFrame(data=None)
 xdata = []
 ydata = []
 
 ws_inverse = inverse_perpetual.WebSocket(
-    test=True,
-    # api_key="0ufzW85gpidJWYdN7Q",
-    # api_secret="eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa",
-    domain="bybit",
-    # ping_interval=60,
-    # ping_timeout=45
+    test=False,
 )
 fig, (ax, ax1) = plt.subplots(1, 2)
 ax.grid(True)
 ax1.grid(True)
 fig.tight_layout()
-
-
-#
-
-#
-# def update_graph():
-#     ax.plot(xdata, ydata, color='g')
-#     plt.setp(ax.get_xticklabels(), rotation=45, horizontalalignment='right', fontsize='x-small')
-#     fig.canvas.draw()
-#     plt.pause(0.1)
-
-
-def show_graph(a, b):
-    a.plot('price', 'size', ax=ax)
-    b.plot('price', 'size', ax=ax1)
-    plt.show()
-    ax.cla()
-    plt.pause(0.5)
 
 
 def handle_info(message):
@@ -74,9 +49,6 @@ def handle_info(message):
 
 def handle_orderbook(message):
     global str_bids, str_asks, ask_price, bid_price, spread, a, b
-
-    # bids.clear()
-    # asks.clear()
 
     df = pd.DataFrame(message['data'])
     pprint.pprint(df)
@@ -142,11 +114,16 @@ ws_inverse.orderbook_200_stream(handle_orderbook, "BTCUSD")
 #
 #     plt.show()
 
-
-while True:
+i = 5
+while i > 0:
     fig.show()
     plt.show()
     plt.pause(5)
+    sleep(1)
+    path = 'img/' + f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.jpg'
+    plt.savefig(path)
 
     ax.cla()
     ax1.cla()
+
+    i -= 1
