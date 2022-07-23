@@ -79,7 +79,7 @@ def handle_orderbook(message):
     # asks.clear()
 
     df = pd.DataFrame(message['data'])
-    #pprint.pprint(df)
+    pprint.pprint(df)
 
     df[['price', 'size']] = df[['price', 'size']].apply(pd.to_numeric, errors='coerce')
 
