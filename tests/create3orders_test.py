@@ -42,26 +42,28 @@ class LimitOrder(TestCase):
                                                   tp=0,
                                                   sl=price + self.delta * 2)
 
-            buy_tuple = (buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'], buy_3[0]['result']['order_id'])
-            sell_tuple = (
-            sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'], sell_3[0]['result']['order_id'])
+            buy_list = [buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'], buy_3[0]['result']['order_id']]
+            sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'], sell_3[0]['result']['order_id']]
 
             self.is_orders = True
+            self.sl_change = False
 
             def cancel_orders(side_):
                 if side_ == 'Buy' and self.is_orders:
-                    for order_id in sell_tuple:
-                        self.session.cancel_active_order(
-                            symbol="BTCUSD",
-                            order_id=order_id
-                        )
+                    for order_id in sell_list:
+                        if not isinstance(order_id, bool):
+                            self.session.cancel_active_order(
+                                symbol="BTCUSD",
+                                order_id=order_id
+                            )
                     self.is_orders = False
                 elif side_ == 'Sell' and self.is_orders:
-                    for order_id in buy_tuple:
-                        self.session.cancel_active_order(
-                            symbol="BTCUSD",
-                            order_id=order_id
-                        )
+                    for order_id in buy_list:
+                        if not isinstance(order_id, bool):
+                            self.session.cancel_active_order(
+                                symbol="BTCUSD",
+                                order_id=order_id
+                            )
                     self.is_orders = False
 
             def execution_wait():
@@ -89,15 +91,21 @@ class LimitOrder(TestCase):
 
                     cancel_orders(side)
 
-                    if take_profit > entry_price != 0 and take_profit != 0:
+                    if side == "Buy":
+                        if take_profit == 0:
+                            take_profit = entry_price + 200
                         trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
-                    else:
+                        print(f"trigger_trailing: {trigger_trailing}$")
+                    if side == "Sell":
+                        if take_profit == 0:
+                            take_profit = entry_price - 200
                         trigger_trailing = int(entry_price - ((entry_price - take_profit) / 2))
-
-                    print(f"trigger_trailing: {trigger_trailing}$")
+                        print(f"trigger_trailing: {trigger_trailing}$")
 
                     while True:
-                        position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
+                        req_pos = self.session.my_position(symbol="BTCUSD")['result']
+                        position_size = req_pos['side']
+
                         if position_size != 0:
                             try:
                                 self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
@@ -116,8 +124,41 @@ class LimitOrder(TestCase):
                     while position_size != 0:
                         try:
                             position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
+                            price = self.bot.get_live_price()
                             live_pnl = self.bot.get_live_pnl()
                             print(f"PNL: {live_pnl}, size: {position_size}")
+
+                            delta_breakeven = 25
+
+                            #price_buy_sl_replace = float(trigger_trailing - 50) + delta_breakeven
+                            #print(f"price_buy_sl_replace: {price_buy_sl_replace}")
+
+                            if side == "Buy" and float(price) > float(trigger_trailing - 50) + delta_breakeven and not self.sl_change:
+                                print('Entering buy block!')
+                                try:
+                                    res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
+                                        entry_price + ((trigger_trailing - entry_price) / 2)))
+                                    if res['ret_code'] == 0:
+                                        print(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                        logger.info(f'SL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                        self.sl_change = True
+                                except Exception as e:
+                                    print(e)
+
+                            #price_sell_sl_replace = float(trigger_trailing - 50) - delta_breakeven
+                            #print(f"price_sell_sl_replace: {price_sell_sl_replace}")
+
+                            if side == "Sell" and float(price) < float(trigger_trailing + 50) - delta_breakeven and not self.sl_change:
+                                print('Entering sell block!')
+                                try:
+                                    res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
+                                        entry_price - ((entry_price - trigger_trailing) / 2)))
+                                    if res['ret_code'] == 0:
+                                        print(f'\nSL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                        logger.info(f'SL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                        self.sl_change = True
+                                except Exception as e:
+                                    print(e)
                             sleep(3)
                         except Exception as e:
                             print(e)
