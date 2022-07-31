@@ -38,7 +38,8 @@ class Strategy:
 
     def show_order_status(self):
         try:
-            result = self.client.Order.Order_getOrders(symbol=self.symbol).result()[0]['result']['data'][0]['order_status']
+            result = self.client.Order.Order_getOrders(symbol=self.symbol).result()[0]['result']['data'][0][
+                'order_status']
         except Exception as e:
             print(e)
             logger.exception(f"{e}", exc_info=True)
@@ -49,7 +50,8 @@ class Strategy:
 
     def get_live_pnl(self):
         try:
-            result = self.client.Positions.Positions_myPosition(symbol=self.symbol).result()[0]['result']['unrealised_pnl']
+            result = self.client.Positions.Positions_myPosition(symbol=self.symbol).result()[0]['result'][
+                'unrealised_pnl']
             if result == 0:
                 return result
             elif result is not None:
@@ -201,9 +203,38 @@ class Strategy:
             self.data.create_limit_order("Sell", self.symbol, arr_s[4], zone_150, tp=zone_100,
                                          sl=zone_150 + delta)
 
-    def create_2_orders(self, arr_l, _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100,
+    def create_multiply(self, arr_l, _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100,
                         zone_75, zone_50, zone_25, price, POC):
 
+        delta = 25
+        check_levels = 0
+        if check_levels == 0:
+            if price > _zone_25:
+                self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25 + delta, tp=POC, sl=0)
+                self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25, tp=POC, sl=0)
+                self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25 - delta, tp=POC,
+                                             sl=_zone_25 - 2 * delta)
+            else:
+                print(f'Longs not found! POC:{POC}, price:{price}')
+                logger.info(f'Longs not found! POC:{POC}, price:{price}')
+                check_levels = 1
+                return check_levels
+
+        if check_levels == 0:
+            if price < zone_25:
+                self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25-delta, tp=POC, sl=0)
+                self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25, tp=POC, sl=0)
+                self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25+delta, tp=POC,
+                                             sl=zone_25+2*delta)
+
+            else:
+                print(f'Shorts not found! POC:{POC}, price:{price}')
+                logger.info(f'Shorts not found! POC:{POC}, price:{price}')
+                check_levels = 1
+                return check_levels
+
+    def create_2_orders(self, arr_l, _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100,
+                        zone_75, zone_50, zone_25, price, POC):
         delta = 25
         check_levels = 0
 
@@ -294,7 +325,7 @@ class Strategy:
     @staticmethod
     def count_contracts(price, available_balance, leverage, percent):
         fees = 1 - (0.00075 * 2)
-        return int(price * available_balance * leverage * percent/100 * fees)
+        return int(price * available_balance * leverage * percent / 100 * fees)
 
     @staticmethod
     def margin():

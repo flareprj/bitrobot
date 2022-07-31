@@ -26,40 +26,42 @@ bid_price = 0
 spread = 0
 xdata = []
 ydata = []
+last_price = 0
 
 ws_inverse = inverse_perpetual.WebSocket(
     test=False,
 )
-fig, (ax, ax1) = plt.subplots(1, 2)
-ax.grid(True)
-ax1.grid(True)
-fig.tight_layout()
+fig = plt.figure(figsize=(10, 5))
+ax = fig.add_subplot(111)
+
+#ax.grid(True)
+# fig.tight_layout()
 
 
 def handle_info(message):
     last_price = int(float(message['data']['last_price']))
-    event_time = time.localtime(message['timestamp_e6'] // 10 ** 6)
-    event_time = f"{event_time.tm_hour}:{event_time.tm_min}:{event_time.tm_sec}"
+    print('before plot:', last_price)
+    plt.axvline(x=last_price, color='r')
+    # event_time = time.localtime(message['timestamp_e6'] // 10 ** 6)
+    # event_time = f"{event_time.tm_hour}:{event_time.tm_min}:{event_time.tm_sec}"
 
-    xdata.append(event_time)
-    ydata.append(last_price)
-
-    print(last_price, event_time)
+    # xdata.append(event_time)
+    # ydata.append(last_price)
 
 
 def handle_orderbook(message):
-    global str_bids, str_asks, ask_price, bid_price, spread, a, b
+    global str_bids, str_asks, ask_price, bid_price, spread, a, b, last_price
 
     df = pd.DataFrame(message['data'])
-    pprint.pprint(df)
-
     df[['price', 'size']] = df[['price', 'size']].apply(pd.to_numeric, errors='coerce')
 
     a = df[df.side == 'Buy']
     b = df[df.side == 'Sell']
 
     a.plot('price', 'size', ax=ax)
-    b.plot('price', 'size', ax=ax1)
+    b.plot('price', 'size', ax=ax)
+
+    #plt.axvline(x=last_price, color='r')
 
     sleep(5)
 
@@ -82,10 +84,6 @@ def handle_orderbook(message):
     #                 spread = ask_price-bid_price
     # print(f"\r{str_bids}, {str_asks}, spread:{spread}", end='')
     # print(f"{str_bids}, {str_asks}, spread:{spread}")
-
-
-ws_inverse.orderbook_200_stream(handle_orderbook, "BTCUSD")
-# ws_inverse.instrument_info_stream(handle_info, "BTCUSD")
 
 
 # if __name__ == '__main__':
@@ -114,16 +112,33 @@ ws_inverse.orderbook_200_stream(handle_orderbook, "BTCUSD")
 #
 #     plt.show()
 
-i = 5
-while i > 0:
+
+ws_inverse.orderbook_200_stream(handle_orderbook, "BTCUSD")
+ws_inverse.instrument_info_stream(handle_info, "BTCUSD")
+
+# i = 10
+# while i > 0:
+#     sleep(1)
+#     fig.show()
+#     plt.show()
+#
+#     path = 'img/' + f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.jpg'
+#     plt.savefig(path)
+#
+#     plt.pause(2)
+#     sleep(1)
+#     ax.cla()
+#     i -= 1
+
+
+while True:
+    sleep(1)
     fig.show()
     plt.show()
-    plt.pause(5)
-    sleep(1)
+
     path = 'img/' + f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.jpg'
     plt.savefig(path)
 
+    plt.pause(2)
+    sleep(1)
     ax.cla()
-    ax1.cla()
-
-    i -= 1
