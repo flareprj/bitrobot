@@ -13,11 +13,11 @@ class LimitOrder(TestCase):
         self.api_key_test = 'qwZENih1NkKLge7kZX'
         self.api_secret_test = 'ptnypkd2W3DfiB82RX1wQUi9ThQSgvPqiCBh'
 
-        self.bot = Strategy(test=True, symbol="BTCUSD", api_key=self.api_key_test,
-                            api_secret=self.api_secret_test, app=None)
+        self.bot = Strategy(test=False, symbol="BTCUSD", api_key=self.api_key,
+                            api_secret=self.api_secret, app=None)
         self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
-        self.session = HTTP("https://api-testnet.bybit.com", api_key=self.api_key_test,
-                            api_secret=self.api_secret_test)
+        self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
+                            api_secret=self.api_secret)
 
         self.side = "Both"
         self.delta = 25
