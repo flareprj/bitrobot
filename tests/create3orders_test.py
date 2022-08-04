@@ -130,9 +130,6 @@ class LimitOrder(TestCase):
 
                             delta_breakeven = 25
 
-                            #price_buy_sl_replace = float(trigger_trailing - 50) + delta_breakeven
-                            #print(f"price_buy_sl_replace: {price_buy_sl_replace}")
-
                             if side == "Buy" and float(price) > float(trigger_trailing - 50) + delta_breakeven and not self.sl_change:
                                 print('Entering buy block!')
                                 try:
@@ -144,9 +141,6 @@ class LimitOrder(TestCase):
                                         self.sl_change = True
                                 except Exception as e:
                                     print(e)
-
-                            #price_sell_sl_replace = float(trigger_trailing - 50) - delta_breakeven
-                            #print(f"price_sell_sl_replace: {price_sell_sl_replace}")
 
                             if side == "Sell" and float(price) < float(trigger_trailing + 50) - delta_breakeven and not self.sl_change:
                                 print('Entering sell block!')

@@ -40,6 +40,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
+        self.is_orders = None
         self.status = None
         self.timer = None
         self.trailing_stop = None
@@ -91,6 +92,7 @@ class MainWindow(QMainWindow):
 
         self.is_alive = False
         self.settings = QSettings('Flareprj', 'BitRobot')
+        #self.disable_areas()
         self.load_settings()
         self.thread_manager = QThreadPool()
 
@@ -138,6 +140,8 @@ class MainWindow(QMainWindow):
             self.ui.main_rb.setChecked(self.settings.value("main_rb", True, bool))
         if self.settings.contains("checkAuto"):
             self.ui.checkAuto.setChecked(self.settings.value("checkAuto", True, bool))
+        if self.settings.contains("multorders"):
+            self.ui.multorders.setChecked(self.settings.value("multorders", True, bool))
 
     def save_settings(self):
         self.settings.setValue("api_key", self.ui.api_key.text())
@@ -157,6 +161,7 @@ class MainWindow(QMainWindow):
         self.settings.setValue("test_rb", self.ui.test_rb.isChecked())
         self.settings.setValue("main_rb", self.ui.main_rb.isChecked())
         self.settings.setValue("checkAuto", self.ui.checkAuto.isChecked())
+        self.settings.setValue("multorders", self.ui.checkAuto.isChecked())
 
     def closeEvent(self, event) -> None:
         self.save_settings()
@@ -180,9 +185,12 @@ class MainWindow(QMainWindow):
                 self.ui.timer.setText('500')
             self.ui.trailing_stop.setEnabled(False)
             self.ui.timer.setEnabled(False)
+            self.ui.multorders.setEnabled(False)
+            self.ui.multorders.setChecked(False)
             self.reset()
         else:
             self.ui.trailing_stop.setEnabled(True)
+            self.ui.multorders.setEnabled(True)
             self.ui.timer.setEnabled(True)
             self.reset()
 
@@ -315,7 +323,8 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def get_data(self):
         if self.is_alive:
-            if self.ui.checkAuto.isChecked():
+            # Auto
+            if self.ui.checkAuto.isChecked() and not self.ui.multorders.isChecked():
                 self.ui.createButton.setEnabled(False)
                 self.ui.cancelButton.setEnabled(False)
 
@@ -333,12 +342,35 @@ class MainWindow(QMainWindow):
                     logger.info('Need to find new levels, the search begins..')
                     self.stop_process(check_levels=1)
                 sleep_()
-            else:
+
+            # Auto + multi
+            if self.ui.checkAuto.isChecked() and self.ui.multorders.isChecked():
+                self.ui.createButton.setEnabled(False)
+                self.ui.cancelButton.setEnabled(False)
+
+                self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+                self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
+
+                self.arr_l.extend(self.arr_s)
+                self.arr_l = [x for x in self.arr_l if x != 0]
+
+                buy_list, sell_list, res = self.create_6()
+                if res == -1:
+                    return
+                if res == 1:
+                    print('Need to find new levels, the search begins..')
+                    logger.info('Need to find new levels, the search begins..')
+                    self.stop_process(check_levels=1)
+                sleep_()
+
+            # Manual
+            if not self.ui.checkAuto.isChecked():
                 self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
                 self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
 
         while self.is_alive:
-            if self.ui.checkAuto.isChecked():
+            # Auto
+            if self.ui.checkAuto.isChecked() and not self.ui.multorders.isChecked():
                 self.status = self.bot.show_order_status()
                 print(f'current_status: {self.status}')
                 logger.info(f'current_status: {self.status}')
@@ -524,7 +556,131 @@ class MainWindow(QMainWindow):
                     logger.info(f'Strange situation! status:{self.status}')
                     self.update_redraw()
 
-            else:
+            # Auto + multi
+            if self.ui.checkAuto.isChecked() and self.ui.multorders.isChecked():
+                self.is_orders = True
+                self.sl_change = False
+                self.buy_list = buy_list
+                self.sell_list = sell_list
+
+                position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
+
+                while position_size == 0:
+                    elapsed_time = self.timer
+                    while elapsed_time > 0 and position_size == 0:
+                        try:
+                            live_price = str(self.bot.get_live_price()) + '$'
+                            self.ui.label_12.setText(live_price)
+                            position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
+                            live_elapsed = str(elapsed_time) + " sec"
+                            self.ui.label_22.setText(live_elapsed)
+                            elapsed_time -= 1
+                            sleep_()
+                        except Exception as e:
+                            print('\n', e)
+                            logger.exception(f'{e}', exc_info=True)
+                    else:
+                        print(f'\ntimer finished!')
+                        logger.info(f'timer finished!')
+                        if self.is_alive:
+                            self.update_order_list()
+                        else:
+                            print(f"Stop receiving the data, time:{datetime.now()}")
+                            logger.info(f"Stop receiving the data")
+                            break
+                else:
+                    try:
+                        req_pos = self.session.my_position(symbol="BTCUSD")['result']
+                    except Exception as e:
+                        print(e)
+                    else:
+                        take_profit = float(req_pos['take_profit'])
+                        entry_price = float(req_pos['entry_price'])
+                        side = req_pos['side']
+
+                        print(f"take_profit: {take_profit}")
+                        print(f"entry_price: {entry_price}")
+                        print(f"side: {side}")
+
+                        self.cancel_orders_list(side, self.buy_list, self.sell_list)
+
+                        if side == "Buy":
+                            if take_profit == 0:
+                                take_profit = entry_price + 200
+                            trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
+                            print(f"trigger_trailing: {trigger_trailing}$")
+                        if side == "Sell":
+                            if take_profit == 0:
+                                take_profit = entry_price - 200
+                            trigger_trailing = int(entry_price - ((entry_price - take_profit) / 2))
+                            print(f"trigger_trailing: {trigger_trailing}$")
+
+                        while True:
+                            req_pos = self.session.my_position(symbol="BTCUSD")['result']
+                            position_size = req_pos['side']
+
+                            if position_size != 0:
+                                try:
+                                    self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
+                                                                  trailing_stop=self.trailing_stop,
+                                                                  new_trailing_active=trigger_trailing)
+                                except Exception as e:
+                                    print('error while placing trailing-stop!', e)
+                                    continue
+                                else:
+                                    if float(self.session.my_position(symbol="BTCUSD")['result'][
+                                                 'trailing_stop']) != '0':
+                                        print(
+                                            f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
+                                        break
+
+                        while position_size != 0:
+                            try:
+                                position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
+                                price = self.bot.get_live_price()
+                                live_pnl = self.bot.get_live_pnl()
+                                #print(f"PNL: {live_pnl}, size: {position_size}")
+                                self.ui.label_12.setText(price)
+                                self.ui.label_15.setText(live_pnl)
+
+                                delta_breakeven = 25
+
+                                if side == "Buy" and float(price) > float(
+                                        trigger_trailing - 50) + delta_breakeven and not self.sl_change:
+                                    print('Entering buy block!')
+                                    try:
+                                        res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
+                                            entry_price + ((trigger_trailing - entry_price) / 2)))
+                                        if res['ret_code'] == 0:
+                                            print(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                            logger.info(
+                                                f'SL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                            self.sl_change = True
+                                    except Exception as e:
+                                        print(e)
+
+                                if side == "Sell" and float(price) < float(
+                                        trigger_trailing + 50) - delta_breakeven and not self.sl_change:
+                                    print('Entering sell block!')
+                                    try:
+                                        res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
+                                            entry_price - ((entry_price - trigger_trailing) / 2)))
+                                        if res['ret_code'] == 0:
+                                            print(f'\nSL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                            logger.info(
+                                                f'SL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                            self.sl_change = True
+                                    except Exception as e:
+                                        print(e)
+                                sleep(3)
+                            except Exception as e:
+                                print(e)
+                        else:
+                            print(f"Order was executed! Position size: {position_size}")
+                            self.bot.cancel_orders()
+
+            # Manual
+            if not self.ui.checkAuto.isChecked():
                 self.ui.createButton.setEnabled(True)
                 self.ui.cancelButton.setEnabled(True)
                 live_price = self.bot.get_live_price() + '$'
@@ -588,6 +744,26 @@ class MainWindow(QMainWindow):
                 return
             sleep_()
             self.status = self.bot.show_order_status()
+
+    def update_order_list(self):
+        self.cancel()
+        print('update levels..')
+        logger.info(f'update levels..')
+        self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
+        self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
+        self.arr_l.extend(self.arr_s)
+        self.arr_l = [x for x in self.arr_l if x != 0]
+        print('redraw completed..')
+        logger.info(f'redraw completed..')
+
+        buy_list, sell_list, res = self.create_6()
+        if res == -1:
+            return
+        if res == 1:
+            print('Need to find new levels, the search begins..')
+            logger.info('Need to find new levels, the search begins..')
+            self.stop_process(check_levels=1)
+        sleep_()
 
     def qty_calc(self):
         _, _, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
@@ -778,12 +954,47 @@ class MainWindow(QMainWindow):
             logger.exception(e, exc_info=True)
 
     @pyqtSlot()
+    def create_6(self):
+        try:
+            default_margin = min(self.arr_l, default=0)
+            if default_margin == 0:
+                self.ui.textBrowser.append(
+                    'Not enough contracts size to create order! Please increase your deposit size or leverage')
+                print('Not enough contracts size to create order! Please increase your deposit size or leverage')
+                logger.info(f'Not enough contracts size to create order! Please increase your deposit size or leverage')
+                return None, None, -1
+            return self.bot.create_6_orders(default_margin, self._zone_150, self._zone_100, self._zone_75, self._zone_50,
+                                             self._zone_25, self.zone_150, self.zone_100,
+                                             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
+
+        except Exception as e:
+            print(repr(e), e)
+            logger.exception(e, exc_info=True)
+
+    @pyqtSlot()
     def cancel(self):
         res = self.bot.cancel_orders()
         if not self.ui.checkAuto.isChecked():
             self.update_scrollbar()
         return res
 
+    def cancel_orders_list(self, side_, buy_list, sell_list):
+        if side_ == 'Buy' and self.is_orders:
+            for order_id in sell_list:
+                if not isinstance(order_id, bool):
+                    self.session.cancel_active_order(
+                        symbol="BTCUSD",
+                        order_id=order_id
+                    )
+            self.is_orders = False
+        elif side_ == 'Sell' and self.is_orders:
+            for order_id in buy_list:
+                if not isinstance(order_id, bool):
+                    self.session.cancel_active_order(
+                        symbol="BTCUSD",
+                        order_id=order_id
+                    )
+            self.is_orders = False
 
 if __name__ == "__main__":
     app = QApplication([])
