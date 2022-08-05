@@ -40,6 +40,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
+        self.sell_list = None
+        self.buy_list = None
         self.is_orders = None
         self.status = None
         self.timer = None
@@ -325,6 +327,7 @@ class MainWindow(QMainWindow):
         if self.is_alive:
             # Auto
             if self.ui.checkAuto.isChecked() and not self.ui.multorders.isChecked():
+                print("AUTO_MODE")
                 self.ui.createButton.setEnabled(False)
                 self.ui.cancelButton.setEnabled(False)
 
@@ -345,6 +348,7 @@ class MainWindow(QMainWindow):
 
             # Auto + multi
             if self.ui.checkAuto.isChecked() and self.ui.multorders.isChecked():
+                print("AUTO+MULTI")
                 self.ui.createButton.setEnabled(False)
                 self.ui.cancelButton.setEnabled(False)
 
@@ -361,10 +365,13 @@ class MainWindow(QMainWindow):
                     print('Need to find new levels, the search begins..')
                     logger.info('Need to find new levels, the search begins..')
                     self.stop_process(check_levels=1)
-                sleep_()
+
+                self.buy_list = buy_list
+                self.sell_list = sell_list
 
             # Manual
             if not self.ui.checkAuto.isChecked():
+                print("MANUAL")
                 self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
                 self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
 
@@ -560,12 +567,11 @@ class MainWindow(QMainWindow):
             if self.ui.checkAuto.isChecked() and self.ui.multorders.isChecked():
                 self.is_orders = True
                 self.sl_change = False
-                self.buy_list = buy_list
-                self.sell_list = sell_list
 
                 position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
 
                 while position_size == 0:
+                    position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
                     elapsed_time = self.timer
                     while elapsed_time > 0 and position_size == 0:
                         try:
@@ -575,6 +581,7 @@ class MainWindow(QMainWindow):
                             live_elapsed = str(elapsed_time) + " sec"
                             self.ui.label_22.setText(live_elapsed)
                             elapsed_time -= 1
+                            print(f"\r{elapsed_time}", end='')
                             sleep_()
                         except Exception as e:
                             print('\n', e)
@@ -584,6 +591,7 @@ class MainWindow(QMainWindow):
                         logger.info(f'timer finished!')
                         if self.is_alive:
                             self.update_order_list()
+                            break
                         else:
                             print(f"Stop receiving the data, time:{datetime.now()}")
                             logger.info(f"Stop receiving the data")
@@ -602,6 +610,7 @@ class MainWindow(QMainWindow):
                         print(f"entry_price: {entry_price}")
                         print(f"side: {side}")
 
+                        print(side, self.buy_list, self.sell_list)
                         self.cancel_orders_list(side, self.buy_list, self.sell_list)
 
                         if side == "Buy":
@@ -638,8 +647,9 @@ class MainWindow(QMainWindow):
                             try:
                                 position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
                                 price = self.bot.get_live_price()
-                                live_pnl = self.bot.get_live_pnl()
-                                #print(f"PNL: {live_pnl}, size: {position_size}")
+                                live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
+                                print(f"PNL: {live_pnl}, size: {position_size}")
+
                                 self.ui.label_12.setText(price)
                                 self.ui.label_15.setText(live_pnl)
 
@@ -757,13 +767,18 @@ class MainWindow(QMainWindow):
         logger.info(f'redraw completed..')
 
         buy_list, sell_list, res = self.create_6()
+
         if res == -1:
             return
         if res == 1:
             print('Need to find new levels, the search begins..')
             logger.info('Need to find new levels, the search begins..')
             self.stop_process(check_levels=1)
-        sleep_()
+
+        self.buy_list = buy_list
+        self.sell_list = sell_list
+
+        #sleep_()
 
     def qty_calc(self):
         _, _, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
@@ -980,20 +995,24 @@ class MainWindow(QMainWindow):
 
     def cancel_orders_list(self, side_, buy_list, sell_list):
         if side_ == 'Buy' and self.is_orders:
+            print('BUY CANCEL')
             for order_id in sell_list:
                 if not isinstance(order_id, bool):
-                    self.session.cancel_active_order(
+                    res = self.session.cancel_active_order(
                         symbol="BTCUSD",
                         order_id=order_id
                     )
+                    pprint.pprint(res)
             self.is_orders = False
         elif side_ == 'Sell' and self.is_orders:
+            print('SELL CANCEL')
             for order_id in buy_list:
                 if not isinstance(order_id, bool):
-                    self.session.cancel_active_order(
+                    res = self.session.cancel_active_order(
                         symbol="BTCUSD",
                         order_id=order_id
                     )
+                    pprint.pprint(res)
             self.is_orders = False
 
 if __name__ == "__main__":
