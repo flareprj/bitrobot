@@ -589,10 +589,7 @@ class MainWindow(QMainWindow):
                     else:
                         print(f'\ntimer finished!')
                         logger.info(f'timer finished!')
-                        if self.is_alive:
-                            self.update_order_list()
-                            break
-                        else:
+                        if not self.is_alive:
                             print(f"Stop receiving the data, time:{datetime.now()}")
                             logger.info(f"Stop receiving the data")
                             break
@@ -687,7 +684,7 @@ class MainWindow(QMainWindow):
                                 print(e)
                         else:
                             print(f"Order was executed! Position size: {position_size}")
-                            self.bot.cancel_orders()
+                            self.update_order_list()
 
             # Manual
             if not self.ui.checkAuto.isChecked():
@@ -703,6 +700,10 @@ class MainWindow(QMainWindow):
     def stop_process(self, check_levels=0):
         if self.is_alive:
             self.status = self.bot.show_order_status()
+
+            if self.ui.multorders.isChecked():
+                self.cancel()
+
             if self.status == "Untriggered" or self.status == "New" or check_levels == 1:
                 self.cancel()
                 if check_levels == 1:
