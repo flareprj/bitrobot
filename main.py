@@ -573,6 +573,8 @@ class MainWindow(QMainWindow):
                 while position_size == 0:
                     position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
                     elapsed_time = self.timer
+                    if not self.is_alive:
+                        break
                     while elapsed_time > 0 and position_size == 0:
                         try:
                             live_price = str(self.bot.get_live_price()) + '$'
@@ -582,6 +584,8 @@ class MainWindow(QMainWindow):
                             self.ui.label_22.setText(live_elapsed)
                             elapsed_time -= 1
                             print(f"\r{elapsed_time}", end='')
+                            if not self.is_alive:
+                                break
                             sleep_()
                         except Exception as e:
                             print('\n', e)
@@ -589,6 +593,8 @@ class MainWindow(QMainWindow):
                     else:
                         print(f'\ntimer finished!')
                         logger.info(f'timer finished!')
+                        if self.is_alive:
+                            self.update_order_list()
                         if not self.is_alive:
                             print(f"Stop receiving the data, time:{datetime.now()}")
                             logger.info(f"Stop receiving the data")
