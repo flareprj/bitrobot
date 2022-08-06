@@ -920,6 +920,8 @@ class MainWindow(QMainWindow):
 
         deposit = int(count_deposit(self.price, self.balance, self.leverage, self.percents))
 
+        logger.info(f'counted deposit: {deposit}$')
+
         self.arr_l, self.arr_s = fills(deposit, qty_l, qty_s, self.order_weights)
 
         try:
@@ -938,6 +940,8 @@ class MainWindow(QMainWindow):
             logger.exception(f"{e}", exc_info=True)
 
         self.ui.label_10.setText(str(self.POC) + '$')
+
+        logger.info(f'counted POC: {self.POC}$')
 
         return self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
                self.zone_75, self.zone_50, self.zone_25, self.price, self.POC

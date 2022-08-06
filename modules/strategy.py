@@ -169,6 +169,8 @@ class Strategy:
     def create_orders(self, arr_l, arr_s, _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100,
                       zone_75, zone_50, zone_25, price, POC):
 
+        logger.info(f'Start creating orders with: {arr_l}, {_zone_150}, {_zone_100}, {_zone_75}, {_zone_50}, {_zone_25}, {zone_150}, {zone_100}, {zone_75}, {zone_50}, {zone_25}, {price}, {POC}')
+
         delta = int((_zone_25 - _zone_50) / 2)
 
         if price > _zone_25:
@@ -206,6 +208,7 @@ class Strategy:
     def create_6_orders(self, arr_l, _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100,
                         zone_75, zone_50, zone_25, price, POC):
 
+        logger.info(f'Start creating orders with: {arr_l}, {_zone_150}, {_zone_100}, {_zone_75}, {_zone_50}, {_zone_25}, {zone_150}, {zone_100}, {zone_75}, {zone_50}, {zone_25}, {price}, {POC}')
         delta = 25
         check_levels = 0
         if check_levels == 0:
@@ -305,6 +308,9 @@ class Strategy:
 
     def create_2_orders(self, arr_l, _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100,
                         zone_75, zone_50, zone_25, price, POC):
+
+        logger.info(f'Start creating orders with: {arr_l}, {_zone_150}, {_zone_100}, {_zone_75}, {_zone_50}, {_zone_25}, {zone_150}, {zone_100}, {zone_75}, {zone_50}, {zone_25}, {price}, {POC}')
+
         delta = 25
         check_levels = 0
 
