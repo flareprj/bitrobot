@@ -1026,10 +1026,17 @@ class MainWindow(QMainWindow):
                     pprint.pprint(res)
             self.is_orders = False
 
+
 if __name__ == "__main__":
     app = QApplication([])
 
     application = MainWindow()
     application.show()
 
-    sys.exit(app.exec())
+    try:
+        sys.exit(app.exec())
+    except SystemExit as e:
+        print('Press ENTER to exit')
+        input('Press ENTER to exit')
+
+
