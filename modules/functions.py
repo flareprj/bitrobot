@@ -133,6 +133,7 @@ class Endpoints:
         else:
             if order[0]['result'] is None:
                 print('result created order is None!')
+                pprint.pprint(order)
                 logger.info('result created order is None!')
                 return False
             if order[0]['result'] is not None:

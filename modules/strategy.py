@@ -296,7 +296,7 @@ class Strategy:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150-delta, tp=zone_100-delta, sl=0)
                 sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150, tp=0, sl=0)
                 sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150+delta, tp=0,
-                                             sl=zone_100+2*delta)
+                                             sl=zone_150+2*delta)
                 sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'],
                              sell_3[0]['result']['order_id']]
                 return buy_list, sell_list, check_levels
