@@ -593,7 +593,8 @@ class MainWindow(QMainWindow):
                     else:
                         print(f'\ntimer finished!')
                         logger.info(f'timer finished!')
-                        if self.is_alive:
+                        if self.is_alive and position_size == 0:
+                            print(f'updating order list: {self.is_alive}, {position_size}')
                             self.update_order_list()
                         if not self.is_alive:
                             print(f"Stop receiving the data, time:{datetime.now()}")
@@ -1005,6 +1006,7 @@ class MainWindow(QMainWindow):
         return res
 
     def cancel_orders_list(self, side_, buy_list, sell_list):
+        print(self.is_orders)
         if side_ == 'Buy' and self.is_orders:
             print('BUY CANCEL')
             for order_id in sell_list:
