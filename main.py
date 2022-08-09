@@ -954,6 +954,9 @@ class MainWindow(QMainWindow):
             logger.exception(f"{e}", exc_info=True)
         except SystemError as e:
             logger.error(f"{e}", exc_info=True)
+        except Exception as e:
+            print(f'{e}')
+            logger.error(f"{e}", exc_info=True)
 
         logger.info(f'counted POC: {self.POC}$')
 
@@ -1045,30 +1048,42 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication([])
-
-    application = MainWindow()
-    application.show()
 
     try:
+        app = QApplication([])
+        application = MainWindow()
+        application.show()
+
         sys.exit(app.exec())
+
     except SystemExit as e:
+        print(f"SystemExit with code: {e}")
         while True:
             try:
                 input('\nPress ENTER to exit')
                 if keyboard.is_pressed('enter'):
-                    print(f"SystemExit with code: {e}")
                     logger.info(f"SystemExit with code: {e}")
                     break
             except:
                 break
     except SystemError as e:
+        print(f"SystemError with code: {e}")
         while True:
             try:
                 input('\nPress ENTER to exit')
                 if keyboard.is_pressed('enter'):
-                    print(f"SystemError with code: {e}")
                     logger.info(f"SystemError with code: {e}")
                     break
             except:
                 break
+    except Exception as e:
+        print(f"Exception with code: {e}")
+        while True:
+            try:
+                input('\nPress ENTER to exit')
+                if keyboard.is_pressed('enter'):
+                    logger.info(f"Exception with code: {e}")
+                    break
+            except:
+                break
+
