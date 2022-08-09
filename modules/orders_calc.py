@@ -1,4 +1,9 @@
 import pprint
+import logging.config
+from modules.settings import *
+
+logging.config.dictConfig(logger_config)
+logger = logging.getLogger('app_logger')
 
 
 def count_deposit(price, available_balance, leverage, percent):
@@ -48,6 +53,8 @@ def fills(deposit, qty_l, qty_s, orders_weights):
     for index, val in enumerate(matrix_s):
         if matrix_s[index] == 0:
             res2[index] = 0
+
+    logger.info(f"filled order matrix: {res1}, {res2}")
 
     return res1, res2
 

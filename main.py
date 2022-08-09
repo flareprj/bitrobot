@@ -800,8 +800,6 @@ class MainWindow(QMainWindow):
         self.buy_list = buy_list
         self.sell_list = sell_list
 
-        #sleep_()
-
     def qty_calc(self):
         _, _, qty_l, qty_s = self.bot.count_orders(self.balance, self.leverage, self.interval,
                                                    self.limit,
@@ -937,9 +935,8 @@ class MainWindow(QMainWindow):
 
         logger.info(f'counted deposit: {deposit}$')
 
-        self.arr_l, self.arr_s = fills(deposit, qty_l, qty_s, self.order_weights)
-
         try:
+            self.arr_l, self.arr_s = fills(deposit, qty_l, qty_s, self.order_weights)
             self.ui.w1_2.setText(str(self.arr_l[0]))
             self.ui.w2_2.setText(str(self.arr_l[1]))
             self.ui.w3_2.setText(str(self.arr_l[2]))
@@ -951,10 +948,12 @@ class MainWindow(QMainWindow):
             self.ui.w3_3.setText(str(self.arr_s[2]))
             self.ui.w4_3.setText(str(self.arr_s[3]))
             self.ui.w5_3.setText(str(self.arr_s[4]))
+
+            self.ui.label_10.setText(str(self.POC) + '$')
         except IndexError as e:
             logger.exception(f"{e}", exc_info=True)
-
-        self.ui.label_10.setText(str(self.POC) + '$')
+        except SystemError as e:
+            logger.error(f"{e}", exc_info=True)
 
         logger.info(f'counted POC: {self.POC}$')
 
@@ -1063,13 +1062,13 @@ if __name__ == "__main__":
                     break
             except:
                 break
-    except BaseException as e:
+    except SystemError as e:
         while True:
             try:
                 input('\nPress ENTER to exit')
                 if keyboard.is_pressed('enter'):
-                    print(f"SystemExit with code: {e}")
-                    logger.info(f"SystemExit with code: {e}")
+                    print(f"SystemError with code: {e}")
+                    logger.info(f"SystemError with code: {e}")
                     break
             except:
                 break
