@@ -135,6 +135,7 @@ class Endpoints:
                 print('result created order is None!')
                 pprint.pprint(order)
                 logger.info('result created order is None!')
+                logger.info(f"{order}")
                 return False
             if order[0]['result'] is not None:
                 result_code = order[0]['ret_code']

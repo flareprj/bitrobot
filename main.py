@@ -94,7 +94,6 @@ class MainWindow(QMainWindow):
 
         self.is_alive = False
         self.settings = QSettings('Flareprj', 'BitRobot')
-        #self.disable_areas()
         self.load_settings()
         self.thread_manager = QThreadPool()
 
@@ -328,6 +327,7 @@ class MainWindow(QMainWindow):
             # Auto
             if self.ui.checkAuto.isChecked() and not self.ui.multorders.isChecked():
                 print("AUTO_MODE")
+                logger.info("AUTO_MODE")
                 self.ui.createButton.setEnabled(False)
                 self.ui.cancelButton.setEnabled(False)
 
@@ -349,6 +349,7 @@ class MainWindow(QMainWindow):
             # Auto + multi
             if self.ui.checkAuto.isChecked() and self.ui.multorders.isChecked():
                 print("AUTO+MULTI")
+                logger.info("AUTO+MULTI")
                 self.ui.createButton.setEnabled(False)
                 self.ui.cancelButton.setEnabled(False)
 
@@ -372,6 +373,7 @@ class MainWindow(QMainWindow):
             # Manual
             if not self.ui.checkAuto.isChecked():
                 print("MANUAL")
+                logger.info("MANUAL")
                 self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
                 self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw()
 
@@ -595,6 +597,7 @@ class MainWindow(QMainWindow):
                         logger.info(f'timer finished!')
                         if self.is_alive and position_size == 0:
                             print(f'updating order list: {self.is_alive}, {position_size}')
+                            logger.info(f'updating order list: {self.is_alive}, {position_size}')
                             self.update_order_list()
                         if not self.is_alive:
                             print(f"Stop receiving the data, time:{datetime.now()}")
@@ -613,20 +616,24 @@ class MainWindow(QMainWindow):
                         print(f"take_profit: {take_profit}")
                         print(f"entry_price: {entry_price}")
                         print(f"side: {side}")
-
+                        logger.info(
+                            f"take_profit:{take_profit}, entry_price:{entry_price}, side:{side}")
                         print(side, self.buy_list, self.sell_list)
                         self.cancel_orders_list(side, self.buy_list, self.sell_list)
+                        logger.info(f"cancel_orders_list: {side}, {self.buy_list}, {self.sell_list}")
 
                         if side == "Buy":
                             if take_profit == 0:
                                 take_profit = entry_price + 200
                             trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
                             print(f"trigger_trailing: {trigger_trailing}$")
+                            logger.info(f"trigger_trailing: {trigger_trailing}$")
                         if side == "Sell":
                             if take_profit == 0:
                                 take_profit = entry_price - 200
                             trigger_trailing = int(entry_price - ((entry_price - take_profit) / 2))
                             print(f"trigger_trailing: {trigger_trailing}$")
+                            logger.info(f"trigger_trailing: {trigger_trailing}$")
 
                         while True:
                             req_pos = self.session.my_position(symbol="BTCUSD")['result']
@@ -639,12 +646,14 @@ class MainWindow(QMainWindow):
                                                                   new_trailing_active=trigger_trailing)
                                 except Exception as e:
                                     print('error while placing trailing-stop!', e)
+                                    logger.info(f'error while placing trailing-stop! {e}')
                                     continue
                                 else:
                                     if float(self.session.my_position(symbol="BTCUSD")['result'][
                                                  'trailing_stop']) != '0':
                                         print(
                                             f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
+                                        logger.info(f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
                                         break
 
                         while position_size != 0:
@@ -653,6 +662,7 @@ class MainWindow(QMainWindow):
                                 price = self.bot.get_live_price()
                                 live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
                                 print(f"PNL: {live_pnl}, size: {position_size}")
+                                logger.info(f"PNL: {live_pnl}, size: {position_size}")
 
                                 self.ui.label_12.setText(price)
                                 self.ui.label_15.setText(live_pnl)
@@ -661,7 +671,8 @@ class MainWindow(QMainWindow):
 
                                 if side == "Buy" and float(price) > float(
                                         trigger_trailing - 50) + delta_breakeven and not self.sl_change:
-                                    print('Entering buy block!')
+                                    print('Entering move sl buy range!')
+                                    logger.info('Entering move sl BUY range!')
                                     try:
                                         res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
                                             entry_price + ((trigger_trailing - entry_price) / 2)))
@@ -675,7 +686,8 @@ class MainWindow(QMainWindow):
 
                                 if side == "Sell" and float(price) < float(
                                         trigger_trailing + 50) - delta_breakeven and not self.sl_change:
-                                    print('Entering sell block!')
+                                    print('Entering move sl sell range!')
+                                    logger.info('Entering move sl SELL range!')
                                     try:
                                         res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
                                             entry_price - ((entry_price - trigger_trailing) / 2)))
@@ -691,6 +703,7 @@ class MainWindow(QMainWindow):
                                 print(e)
                         else:
                             print(f"Order was executed! Position size: {position_size}")
+                            logger.info(f"Order was executed! Position size: {position_size}")
                             self.update_order_list()
 
             # Manual
@@ -1009,23 +1022,25 @@ class MainWindow(QMainWindow):
         print(self.is_orders)
         if side_ == 'Buy' and self.is_orders:
             print('BUY CANCEL')
+            logger.info('BUY CANCEL')
             for order_id in sell_list:
                 if not isinstance(order_id, bool):
                     res = self.session.cancel_active_order(
                         symbol="BTCUSD",
                         order_id=order_id
                     )
-                    pprint.pprint(res)
+                    logger.info(f"{res}")
             self.is_orders = False
         elif side_ == 'Sell' and self.is_orders:
             print('SELL CANCEL')
+            logger.info('SELL CANCEL')
             for order_id in buy_list:
                 if not isinstance(order_id, bool):
                     res = self.session.cancel_active_order(
                         symbol="BTCUSD",
                         order_id=order_id
                     )
-                    pprint.pprint(res)
+                    logger.info(f"{res}")
             self.is_orders = False
 
 
@@ -1038,7 +1053,6 @@ if __name__ == "__main__":
     try:
         sys.exit(app.exec())
     except SystemExit as e:
-        print('Press ENTER to exit')
         input('Press ENTER to exit')
 
 
