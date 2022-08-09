@@ -1063,3 +1063,13 @@ if __name__ == "__main__":
                     break
             except:
                 break
+    except BaseException as e:
+        while True:
+            try:
+                input('\nPress ENTER to exit')
+                if keyboard.is_pressed('enter'):
+                    print(f"SystemExit with code: {e}")
+                    logger.info(f"SystemExit with code: {e}")
+                    break
+            except:
+                break
