@@ -1,5 +1,6 @@
 import http.client
 import sys
+import keyboard
 
 from pybit.inverse_perpetual import HTTP
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -1053,6 +1054,12 @@ if __name__ == "__main__":
     try:
         sys.exit(app.exec())
     except SystemExit as e:
-        input('Press ENTER to exit')
-
-
+        while True:
+            try:
+                input('\nPress ENTER to exit')
+                if keyboard.is_pressed('enter'):
+                    print(f"SystemExit with code: {e}")
+                    logger.info(f"SystemExit with code: {e}")
+                    break
+            except:
+                break
