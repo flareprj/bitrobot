@@ -214,35 +214,35 @@ class Strategy:
         if check_levels == 0:
             if price > _zone_25:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25 + delta, tp=POC, sl=0)
-                buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25, tp=0, sl=0)
-                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_25 - 2*delta, tp=0, sl=(_zone_25 - 2*delta)-round((_zone_25-_zone_50)/2, 2))
+                buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25, tp=POC, sl=0)
+                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_25 - 2*delta, tp=POC, sl=(_zone_25 - 2*delta)-round((_zone_25-_zone_50)/2, 2))
                 buy_list = [buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'],
                             buy_3[0]['result']['order_id']]
             elif price > _zone_50:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_50 + delta, tp=_zone_25+delta, sl=0)
-                buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_50, tp=0, sl=0)
-                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_50 - 2*delta, tp=0, sl=(_zone_50 - 2 * delta)-round((_zone_50-_zone_75)/2, 2))
+                buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_50, tp=_zone_25+delta, sl=0)
+                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_50 - 2*delta, tp=_zone_25+delta, sl=(_zone_50 - 2 * delta)-round((_zone_50-_zone_75)/2, 2))
 
                 buy_list = [buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'],
                             buy_3[0]['result']['order_id']]
             elif price > _zone_75:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_75 + delta, tp=_zone_50+delta, sl=0)
-                buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_75, tp=0, sl=0)
-                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_75 - 2*delta, tp=0, sl=(_zone_75 - 2 * delta)-round((_zone_50-_zone_75)/2, 2))
+                buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_75, tp=_zone_50+delta, sl=0)
+                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_75 - 2*delta, tp=_zone_50+delta, sl=(_zone_75 - 2 * delta)-round((_zone_50-_zone_75)/2, 2))
 
                 buy_list = [buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'],
                             buy_3[0]['result']['order_id']]
             elif price > _zone_100:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_100 + delta, tp=_zone_75+delta, sl=0)
-                buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_100, tp=0, sl=0)
-                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_100 - 2*delta, tp=0, sl=(_zone_100 - 2 * delta)-round((_zone_100-_zone_150)/2, 2))
+                buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_100, tp=_zone_75+delta, sl=0)
+                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_100 - 2*delta, tp=_zone_75+delta, sl=(_zone_100 - 2 * delta)-round((_zone_100-_zone_150)/2, 2))
 
                 buy_list = [buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'],
                             buy_3[0]['result']['order_id']]
             elif price > _zone_150:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_150 + delta, tp=_zone_100+delta, sl=0)
-                buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_150, tp=0, sl=0)
-                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_150 - 2*delta, tp=0, sl=(_zone_150 - 2 * delta)-round((_zone_100-_zone_150)/2, 2))
+                buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_150, tp=_zone_100+delta, sl=0)
+                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_150 - 2*delta, tp=_zone_100+delta, sl=(_zone_150 - 2 * delta)-round((_zone_100-_zone_150)/2, 2))
 
                 buy_list = [buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'],
                             buy_3[0]['result']['order_id']]
@@ -256,36 +256,36 @@ class Strategy:
         if check_levels == 0:
             if price < zone_25:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25-delta, tp=POC, sl=0)
-                sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25, tp=0, sl=0)
-                sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_25+2*delta, tp=0, sl=(zone_25+2*delta)+round((zone_50-zone_25)/2, 2))
+                sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25, tp=POC, sl=0)
+                sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_25+2*delta, tp=POC, sl=(zone_25+2*delta)+round((zone_50-zone_25)/2, 2))
                 sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'],
                              sell_3[0]['result']['order_id']]
                 return buy_list, sell_list, check_levels
             elif price < zone_50:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_50-delta, tp=zone_25-delta, sl=0)
-                sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_50, tp=0, sl=0)
-                sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_50+2*delta, tp=0, sl=(zone_50+2*delta)+round((zone_75-zone_50)/2, 2))
+                sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_50, tp=zone_25-delta, sl=0)
+                sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_50+2*delta, tp=zone_25-delta, sl=(zone_50+2*delta)+round((zone_75-zone_50)/2, 2))
                 sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'],
                              sell_3[0]['result']['order_id']]
                 return buy_list, sell_list, check_levels
             elif price < zone_75:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_75-delta, tp=zone_50-delta, sl=0)
-                sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_75, tp=0, sl=0)
-                sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_75+2*delta, tp=0, sl=(zone_75+2*delta)+round((zone_100-zone_75)/2, 2))
+                sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_75, tp=zone_50-delta, sl=0)
+                sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_75+2*delta, tp=zone_50-delta, sl=(zone_75+2*delta)+round((zone_100-zone_75)/2, 2))
                 sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'],
                              sell_3[0]['result']['order_id']]
                 return buy_list, sell_list, check_levels
             elif price < zone_100:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_100-delta, tp=zone_75-delta, sl=0)
-                sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_100, tp=0, sl=0)
-                sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_100+2*delta, tp=0, sl=(zone_100+2*delta)+round((zone_150-zone_100)/2, 2))
+                sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_100, tp=zone_75-delta, sl=0)
+                sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_100+2*delta, tp=zone_75-delta, sl=(zone_100+2*delta)+round((zone_150-zone_100)/2, 2))
                 sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'],
                              sell_3[0]['result']['order_id']]
                 return buy_list, sell_list, check_levels
             elif price < zone_150:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150-delta, tp=zone_100-delta, sl=0)
-                sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150, tp=0, sl=0)
-                sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_150+2*delta, tp=0, sl=(zone_150+2*delta)+round((zone_150-zone_100)/2, 2))
+                sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150, tp=zone_100-delta, sl=0)
+                sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_150+2*delta, tp=zone_100-delta, sl=(zone_150+2*delta)+round((zone_150-zone_100)/2, 2))
                 sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'],
                              sell_3[0]['result']['order_id']]
                 return buy_list, sell_list, check_levels
