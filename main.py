@@ -626,36 +626,12 @@ class MainWindow(QMainWindow):
                         if side == "Buy":
                             if take_profit == 0:
                                 take_profit = entry_price + 200
-                            trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
-                            print(f"trigger_trailing: {trigger_trailing}$")
-                            logger.info(f"trigger_trailing: {trigger_trailing}$")
+                            distance = int(entry_price + ((take_profit - entry_price) / 2))
+
                         if side == "Sell":
                             if take_profit == 0:
                                 take_profit = entry_price - 200
-                            trigger_trailing = int(entry_price - ((entry_price - take_profit) / 2))
-                            print(f"trigger_trailing: {trigger_trailing}$")
-                            logger.info(f"trigger_trailing: {trigger_trailing}$")
-
-                        while True:
-                            req_pos = self.session.my_position(symbol="BTCUSD")['result']
-                            position_size = req_pos['side']
-
-                            if position_size != 0:
-                                try:
-                                    self.session.set_trading_stop(symbol="BTCUSD", take_profit=0,
-                                                                  trailing_stop=self.trailing_stop,
-                                                                  new_trailing_active=trigger_trailing)
-                                except Exception as e:
-                                    print('error while placing trailing-stop!', e)
-                                    logger.info(f'error while placing trailing-stop! {e}')
-                                    continue
-                                else:
-                                    if float(self.session.my_position(symbol="BTCUSD")['result'][
-                                                 'trailing_stop']) != '0':
-                                        print(
-                                            f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
-                                        logger.info(f"placing a trailing-stop: {trigger_trailing}$ - ok! time:{datetime.now()}")
-                                        break
+                            distance = int(entry_price - ((entry_price - take_profit) / 2))
 
                         while position_size != 0:
                             try:
@@ -670,13 +646,12 @@ class MainWindow(QMainWindow):
 
                                 delta_breakeven = 25
 
-                                if side == "Buy" and float(price) > float(
-                                        trigger_trailing - 50) + delta_breakeven and not self.sl_change:
-                                    print('Entering move sl buy range!')
+                                if side == "Buy" and float(price) > float(distance - 50) + delta_breakeven and not self.sl_change:
+                                    print('Entering move sl BUY range!')
                                     logger.info('Entering move sl BUY range!')
                                     try:
                                         res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
-                                            entry_price + ((trigger_trailing - entry_price) / 2)))
+                                            entry_price + ((distance - entry_price) / 2)))
                                         if res['ret_code'] == 0:
                                             print(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                             logger.info(
@@ -685,13 +660,12 @@ class MainWindow(QMainWindow):
                                     except Exception as e:
                                         print(e)
 
-                                if side == "Sell" and float(price) < float(
-                                        trigger_trailing + 50) - delta_breakeven and not self.sl_change:
-                                    print('Entering move sl sell range!')
+                                if side == "Sell" and float(price) < float(distance + 50) - delta_breakeven and not self.sl_change:
+                                    print('Entering move sl SELL range!')
                                     logger.info('Entering move sl SELL range!')
                                     try:
                                         res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
-                                            entry_price - ((entry_price - trigger_trailing) / 2)))
+                                            entry_price - ((entry_price - distance) / 2)))
                                         if res['ret_code'] == 0:
                                             print(f'\nSL has been replaced! New price: {res["result"]["stop_loss"]}$')
                                             logger.info(
