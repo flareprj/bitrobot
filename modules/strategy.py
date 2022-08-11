@@ -145,26 +145,38 @@ class Strategy:
         overall_contracts = self.count_contracts(price, balance, leverage=leverage, percent=percent)
         data_kline = Strategy.get_kline(self, interval=interval, limit=limit)
 
-        _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100, \
-        zone_75, zone_50, zone_25, df, POC = Strategy.get_margin_poc(
-            data_kline)
+        res = Strategy.get_margin_poc(data_kline)
 
-        qty_l = qty_s = 0
+        if res is not None:
+            _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100, \
+            zone_75, zone_50, zone_25, df, POC = res
 
-        qty_l += 1 if price > _zone_150 else 0
-        qty_l += 1 if price > _zone_100 else 0
-        qty_l += 1 if price > _zone_75 else 0
-        qty_l += 1 if price > _zone_50 else 0
-        qty_l += 1 if price > _zone_25 else 0
+            qty_l = qty_s = 0
 
-        qty_s += 1 if price < zone_150 else 0
-        qty_s += 1 if price < zone_100 else 0
-        qty_s += 1 if price < zone_75 else 0
-        qty_s += 1 if price < zone_50 else 0
-        qty_s += 1 if price < zone_25 else 0
+            qty_l += 1 if price > _zone_150 else 0
+            qty_l += 1 if price > _zone_100 else 0
+            qty_l += 1 if price > _zone_75 else 0
+            qty_l += 1 if price > _zone_50 else 0
+            qty_l += 1 if price > _zone_25 else 0
 
-        arr_l, arr_s = calc_orders(overall_contracts, qty_l, qty_s, order_weights)
-        return arr_l, arr_s, qty_l, qty_s
+            qty_s += 1 if price < zone_150 else 0
+            qty_s += 1 if price < zone_100 else 0
+            qty_s += 1 if price < zone_75 else 0
+            qty_s += 1 if price < zone_50 else 0
+            qty_s += 1 if price < zone_25 else 0
+
+            arr_l, arr_s = calc_orders(overall_contracts, qty_l, qty_s, order_weights)
+            return arr_l, arr_s, qty_l, qty_s
+        else:
+            while res is None:
+                print('waiting for trading data..')
+                logger.info('waiting for trading data..')
+                sleep(60)
+                res = Strategy.get_margin_poc(
+                    data_kline)
+            else:
+                print('data received, continue trade..')
+                logger.info('data received, continue trade..')
 
     def create_orders(self, arr_l, arr_s, _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100,
                       zone_75, zone_50, zone_25, price, POC):
@@ -210,36 +222,37 @@ class Strategy:
 
         logger.info(f'Start creating orders with: {arr_l}, {_zone_150}, {_zone_100}, {_zone_75}, {_zone_50}, {_zone_25}, {zone_150}, {zone_100}, {zone_75}, {zone_50}, {zone_25}, {price}, {POC}')
         delta = 33
+        filter_for_enter_to_order = 85
         check_levels = 0
         if check_levels == 0:
-            if price > _zone_25:
+            if price - filter_for_enter_to_order > _zone_25:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25 + delta, tp=POC, sl=0)
                 buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25, tp=POC, sl=0)
                 buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_25 - 2*delta, tp=POC, sl=(_zone_25 - 2*delta)-round((_zone_25-_zone_50)/2, 2))
                 buy_list = [buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'],
                             buy_3[0]['result']['order_id']]
-            elif price > _zone_50:
+            elif price - filter_for_enter_to_order > _zone_50:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_50 + delta, tp=_zone_25+delta, sl=0)
                 buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_50, tp=_zone_25+delta, sl=0)
                 buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_50 - 2*delta, tp=_zone_25+delta, sl=(_zone_50 - 2 * delta)-round((_zone_50-_zone_75)/2, 2))
 
                 buy_list = [buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'],
                             buy_3[0]['result']['order_id']]
-            elif price > _zone_75:
+            elif price - filter_for_enter_to_order > _zone_75:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_75 + delta, tp=_zone_50+delta, sl=0)
                 buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_75, tp=_zone_50+delta, sl=0)
                 buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_75 - 2*delta, tp=_zone_50+delta, sl=(_zone_75 - 2 * delta)-round((_zone_50-_zone_75)/2, 2))
 
                 buy_list = [buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'],
                             buy_3[0]['result']['order_id']]
-            elif price > _zone_100:
+            elif price - filter_for_enter_to_order > _zone_100:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_100 + delta, tp=_zone_75+delta, sl=0)
                 buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_100, tp=_zone_75+delta, sl=0)
                 buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_100 - 2*delta, tp=_zone_75+delta, sl=(_zone_100 - 2 * delta)-round((_zone_100-_zone_150)/2, 2))
 
                 buy_list = [buy_1[0]['result']['order_id'], buy_2[0]['result']['order_id'],
                             buy_3[0]['result']['order_id']]
-            elif price > _zone_150:
+            elif price - filter_for_enter_to_order > _zone_150:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_150 + delta, tp=_zone_100+delta, sl=0)
                 buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_150, tp=_zone_100+delta, sl=0)
                 buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_150 - 2*delta, tp=_zone_100+delta, sl=(_zone_150 - 2 * delta)-round((_zone_100-_zone_150)/2, 2))
@@ -254,35 +267,35 @@ class Strategy:
                 return None, None, check_levels
 
         if check_levels == 0:
-            if price < zone_25:
+            if price + filter_for_enter_to_order < zone_25:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25-delta, tp=POC, sl=0)
                 sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25, tp=POC, sl=0)
                 sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_25+2*delta, tp=POC, sl=(zone_25+2*delta)+round((zone_50-zone_25)/2, 2))
                 sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'],
                              sell_3[0]['result']['order_id']]
                 return buy_list, sell_list, check_levels
-            elif price < zone_50:
+            elif price + filter_for_enter_to_order < zone_50:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_50-delta, tp=zone_25-delta, sl=0)
                 sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_50, tp=zone_25-delta, sl=0)
                 sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_50+2*delta, tp=zone_25-delta, sl=(zone_50+2*delta)+round((zone_75-zone_50)/2, 2))
                 sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'],
                              sell_3[0]['result']['order_id']]
                 return buy_list, sell_list, check_levels
-            elif price < zone_75:
+            elif price + filter_for_enter_to_order < zone_75:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_75-delta, tp=zone_50-delta, sl=0)
                 sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_75, tp=zone_50-delta, sl=0)
                 sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_75+2*delta, tp=zone_50-delta, sl=(zone_75+2*delta)+round((zone_100-zone_75)/2, 2))
                 sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'],
                              sell_3[0]['result']['order_id']]
                 return buy_list, sell_list, check_levels
-            elif price < zone_100:
+            elif price + filter_for_enter_to_order < zone_100:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_100-delta, tp=zone_75-delta, sl=0)
                 sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_100, tp=zone_75-delta, sl=0)
                 sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_100+2*delta, tp=zone_75-delta, sl=(zone_100+2*delta)+round((zone_150-zone_100)/2, 2))
                 sell_list = [sell_1[0]['result']['order_id'], sell_2[0]['result']['order_id'],
                              sell_3[0]['result']['order_id']]
                 return buy_list, sell_list, check_levels
-            elif price < zone_150:
+            elif price + filter_for_enter_to_order < zone_150:
                 sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150-delta, tp=zone_100-delta, sl=0)
                 sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150, tp=zone_100-delta, sl=0)
                 sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_150+2*delta, tp=zone_100-delta, sl=(zone_150+2*delta)+round((zone_150-zone_100)/2, 2))
@@ -356,36 +369,49 @@ class Strategy:
             logger.info("No data received")
             return 0
 
-        _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100, \
-        zone_75, zone_50, zone_25, df, POC = Strategy.get_margin_poc(data_kline)
+        res = Strategy.get_margin_poc(data_kline)
 
-        found_zone_150 = found_zone_100 = found_zone_75 = found_zone_50 = found_zone_25 = found_zone_150_ = found_zone_100_ = found_zone_75_ = found_zone_50_ = found_zone_25_ = 'Not found'
+        if res is not None:
+            _zone_150, _zone_100, _zone_75, _zone_50, _zone_25, zone_150, zone_100, \
+            zone_75, zone_50, zone_25, df, POC = res
 
-        if price > _zone_150:
-            found_zone_150 = 'Found'
-        if price > _zone_100:
-            found_zone_100 = 'Found'
-        if price > _zone_75:
-            found_zone_75 = 'Found'
-        if price > _zone_50:
-            found_zone_50 = 'Found'
-        if price > _zone_25:
-            found_zone_25 = 'Found'
+            found_zone_150 = found_zone_100 = found_zone_75 = found_zone_50 = found_zone_25 = found_zone_150_ = found_zone_100_ = found_zone_75_ = found_zone_50_ = found_zone_25_ = 'Not found'
 
-        if price < zone_150:
-            found_zone_150_ = 'Found'
-        if price < zone_100:
-            found_zone_100_ = 'Found'
-        if price < zone_75:
-            found_zone_75_ = 'Found'
-        if price < zone_50:
-            found_zone_50_ = 'Found'
-        if price < zone_25:
-            found_zone_25_ = 'Found'
+            if price > _zone_150:
+                found_zone_150 = 'Found'
+            if price > _zone_100:
+                found_zone_100 = 'Found'
+            if price > _zone_75:
+                found_zone_75 = 'Found'
+            if price > _zone_50:
+                found_zone_50 = 'Found'
+            if price > _zone_25:
+                found_zone_25 = 'Found'
 
-        return _zone_100, _zone_75, _zone_50, _zone_25, zone_100, _zone_150, zone_150, zone_100, \
-               zone_75, zone_50, zone_25, df, POC, price, found_zone_150, found_zone_100, found_zone_75, found_zone_50, \
-               found_zone_25, found_zone_150_, found_zone_100_, found_zone_75_, found_zone_50_, found_zone_25_
+            if price < zone_150:
+                found_zone_150_ = 'Found'
+            if price < zone_100:
+                found_zone_100_ = 'Found'
+            if price < zone_75:
+                found_zone_75_ = 'Found'
+            if price < zone_50:
+                found_zone_50_ = 'Found'
+            if price < zone_25:
+                found_zone_25_ = 'Found'
+
+            return _zone_100, _zone_75, _zone_50, _zone_25, zone_100, _zone_150, zone_150, zone_100, \
+                   zone_75, zone_50, zone_25, df, POC, price, found_zone_150, found_zone_100, found_zone_75, found_zone_50, \
+                   found_zone_25, found_zone_150_, found_zone_100_, found_zone_75_, found_zone_50_, found_zone_25_
+        else:
+            while res is None:
+                print('waiting for trading data..')
+                logger.info('waiting for trading data..')
+                sleep(60)
+                res = Strategy.get_margin_poc(
+                    data_kline)
+            else:
+                print('data received, continue trade..')
+                logger.info('data received, continue trade..')
 
     @staticmethod
     def count_contracts(price, available_balance, leverage, percent):
@@ -448,6 +474,9 @@ class Strategy:
             pky = kdy[peaks]
             result = np.where(pky == pky.max())
 
+        except ValueError as e:
+            print(f'Value error: {e}')
+            logger.exception(f"{e}", exc_info=True)
         except Exception as e:
             print(e)
             logger.exception(f"{e}", exc_info=True)
