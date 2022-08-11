@@ -696,30 +696,28 @@ class MainWindow(QMainWindow):
         if self.is_alive:
             self.status = self.bot.show_order_status()
 
-            if self.ui.multorders.isChecked():
-                self.cancel()
+            if check_levels == 1:
+                self.ui.textBrowser.append(f'finding new levels..')
+                list_tf = ['1', '3', '5', '15', '30', '60', '120', '240', '360', '720', 'D', 'W', 'M']
+                current_tf = self.ui.lineEdit_3.text()
+                for i, tf in enumerate(list_tf, start=0):
+                    if tf == current_tf:
+                        self.ui.lineEdit_3.setText(list_tf[i - 1])
+                        self.get_data()
+                        break
 
-            if self.status == "Untriggered" or self.status == "New" or check_levels == 1:
+            if self.status == "Untriggered" or self.status == "New":
                 self.cancel()
-                if check_levels == 1:
-                    self.ui.textBrowser.append(f'finding new levels..')
-                    list_tf = ['1', '3', '5', '15', '30', '60', '120', '240', '360', '720', 'D', 'W', 'M']
-                    current_tf = self.ui.lineEdit_3.text()
-                    for i, tf in enumerate(list_tf, start=0):
-                        if tf == current_tf:
-                            self.ui.lineEdit_3.setText(list_tf[i - 1])
-                            self.get_data()
-                            break
-            self.is_alive = False
-            self.ui.textBrowser.append(f"Stop receiving the data, time:{datetime.now()}")
-            print(f"Stop receiving the data, time:{datetime.now()}")
-            logger.info(f"Stop receiving the data")
-            self.update_scrollbar()
-            self.ui.startButton.setEnabled(True)
-            return
-        if not self.ui.startButton.isEnabled():
-            self.ui.startButton.setEnabled(True)
-            return
+                self.is_alive = False
+                self.ui.textBrowser.append(f"Stop receiving the data, time:{datetime.now()}")
+                print(f"Stop receiving the data, time:{datetime.now()}")
+                logger.info(f"Stop receiving the data")
+                self.update_scrollbar()
+                self.ui.startButton.setEnabled(True)
+                return
+            if not self.ui.startButton.isEnabled():
+                self.ui.startButton.setEnabled(True)
+                return
 
     def update_redraw(self):
         self.cancel()
