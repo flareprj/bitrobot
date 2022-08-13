@@ -580,8 +580,8 @@ class MainWindow(QMainWindow):
                         break
                     while elapsed_time > 0 and position_size == 0:
                         try:
-                            live_price = str(self.bot.get_live_price()) + '$'
-                            self.ui.label_12.setText(live_price)
+                            #live_price = str(self.bot.get_live_price()) + '$'
+                            #self.ui.label_12.setText(live_price)
                             position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
                             live_elapsed = str(elapsed_time) + " sec"
                             self.ui.label_22.setText(live_elapsed)
@@ -589,7 +589,7 @@ class MainWindow(QMainWindow):
                             print(f"\r{elapsed_time}", end='')
                             if not self.is_alive:
                                 break
-                            sleep_()
+                            sleep(1)
                         except Exception as e:
                             print('\n', e)
                             logger.exception(f'{e}', exc_info=True)
@@ -624,22 +624,27 @@ class MainWindow(QMainWindow):
                         logger.info(f"cancel_orders_list: {side}, {self.buy_list}, {self.sell_list}")
 
                         if side == "Buy":
-                            if take_profit == 0:
-                                take_profit = entry_price + 200
                             distance = int(entry_price + ((take_profit - entry_price) / 2))
-
-                        if side == "Sell":
-                            if take_profit == 0:
-                                take_profit = entry_price - 200
+                        elif side == "Sell":
                             distance = int(entry_price - ((entry_price - take_profit) / 2))
 
                         while position_size != 0:
                             try:
-                                position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
+                                count_active_orders = len(self.session.get_active_order(symbol="BTCUSD", order_status="New")['result']['data'])
+                                position = self.session.my_position(symbol="BTCUSD")['result']
+                                position_size = position['size']
+                                entry_price = round(float(position['entry_price']), 2)
                                 price = self.bot.get_live_price()
-                                live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
-                                print(f"PNL: {live_pnl}, size: {position_size}")
-                                logger.info(f"PNL: {live_pnl}, size: {position_size}")
+                                pnl = self.bot.get_live_pnl()
+                                live_pnl = str(pnl) + ' BTC'
+                                print(f"PNL: {live_pnl}, size: {position_size}, active_orders: {count_active_orders}")
+                                logger.info(f"PNL: {live_pnl}, size: {position_size}, active_orders: {count_active_orders}")
+
+                                if count_active_orders == 0 and float(pnl) < 0:
+                                    code = self.filter_timer(1, 1, entry_price, side, position_size)
+                                    if code == 1:
+                                        self.update_order_list()
+                                        break
 
                                 self.ui.label_12.setText(price)
                                 self.ui.label_15.setText(live_pnl)
@@ -673,6 +678,7 @@ class MainWindow(QMainWindow):
                                             self.sl_change = True
                                     except Exception as e:
                                         print(e)
+
                                 sleep(3)
                             except Exception as e:
                                 print(e)
@@ -718,6 +724,63 @@ class MainWindow(QMainWindow):
             if not self.ui.startButton.isEnabled():
                 self.ui.startButton.setEnabled(True)
                 return
+
+    def create_market(self, side, qty):
+        self.session.place_active_order(
+            symbol="BTCUSD",
+            side=side,
+            order_type="Market",
+            qty=qty,
+            time_in_force="GoodTillCancel"
+        )
+
+    def filter_timer(self, timeframe, limit, entry_price, side, position_size):
+        try:
+            time_now_int = int(float(self.session.server_time()['time_now']))
+            time_now_int_minus = time_now_int - timeframe * 60 * limit
+
+            result = self.session.query_kline(symbol='BTCUSD', interval=str(timeframe),
+                                              **{'from': time_now_int_minus},
+                                              limit=limit)
+            candle_open_time = result['result'][0]['open_time']
+
+            time_now_int = int(float(self.session.server_time()['time_now']))
+            open_time_fix = datetime.utcfromtimestamp(int(candle_open_time)).strftime('%H:%M:%S')
+        except IndexError as e:
+            print(e)
+        else:
+            while time_now_int < candle_open_time + 60 * timeframe:
+                try:
+                    time_now_int += 1
+                    time_now = datetime.utcfromtimestamp(time_now_int).strftime('%H:%M:%S')
+                    sleep(1)
+                    print(f'candle_open_time: {open_time_fix}, time_now: {time_now}')
+                    logger.info(f'candle_open_time: {open_time_fix}, time_now: {time_now}')
+                except Exception as e:
+                    print(f'timer timeout:{time_now_int}, {e}')
+            else:
+                print('Candle was closed!')
+                logger.info('Candle was closed!')
+                last_price = round(float(self.session.latest_information_for_symbol(
+                    symbol="BTCUSD"
+                )['result'][0]['last_price']), 2)
+                print(f'last_price: {last_price}$, entry: {entry_price}$')
+
+                if side == 'Buy' and last_price < entry_price:
+                    self.create_market(side='Sell', qty=position_size)
+                    print(f'Order {side} was closed!')
+                    logger.info(f'Order {side} was closed!')
+                    return 1
+                elif side == 'Sell' and last_price > entry_price:
+                    self.create_market(side='Buy', qty=position_size)
+                    print(f'Order {side} was closed!')
+                    logger.info(f'Order {side} was closed!')
+                    return 1
+                else:
+                    print('The candle closes positive, so we continue trading..')
+                    logger.info('The candle closes positive, so we continue trading..')
+                    return 0
+
 
     def update_redraw(self):
         self.cancel()

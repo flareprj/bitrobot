@@ -48,14 +48,14 @@ class Strategy:
             if result is not None:
                 return result
 
-    def get_live_pnl(self):
+    def get_live_pnl(self) -> float:
         try:
             result = self.client.Positions.Positions_myPosition(symbol=self.symbol).result()[0]['result'][
                 'unrealised_pnl']
             if result == 0:
                 return result
             elif result is not None:
-                result = '{:0.8f}'.format(result)
+                result = float('{:0.8f}'.format(result))
                 return result
         except Exception as e:
             print(e)
@@ -222,7 +222,7 @@ class Strategy:
 
         logger.info(f'Start creating orders with: {arr_l}, {_zone_150}, {_zone_100}, {_zone_75}, {_zone_50}, {_zone_25}, {zone_150}, {zone_100}, {zone_75}, {zone_50}, {zone_25}, {price}, {POC}')
         delta = 33
-        filter_for_enter_to_order = 85
+        filter_for_enter_to_order = 50
         check_levels = 0
         if check_levels == 0:
             if price - filter_for_enter_to_order > _zone_25 + delta and price + filter_for_enter_to_order < zone_25 - delta:
