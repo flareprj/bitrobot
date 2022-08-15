@@ -48,14 +48,14 @@ class Strategy:
             if result is not None:
                 return result
 
-    def get_live_pnl(self) -> float:
+    def get_live_pnl(self) -> str:
         try:
             result = self.client.Positions.Positions_myPosition(symbol=self.symbol).result()[0]['result'][
                 'unrealised_pnl']
             if result == 0:
                 return result
             elif result is not None:
-                result = float('{:0.8f}'.format(result))
+                result = '{:0.8f}'.format(result)
                 return result
         except Exception as e:
             print(e)

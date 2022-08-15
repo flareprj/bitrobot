@@ -70,5 +70,8 @@ def connWS():
 
 
 if __name__ == "__main__":
-    websocket.enableTrace(True)
-    connWS()
+    # websocket.enableTrace(True)
+    # connWS()
+    result = 0.000000244
+    result = '{0:.10f}'.format(result)
+    print(f'{result}')
