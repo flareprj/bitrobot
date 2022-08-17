@@ -681,10 +681,10 @@ class MainWindow(QMainWindow):
                             except Exception as e:
                                 print(e)
                         else:
-                            order_pnl = round(float(self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0]['closed_pnl']), 8)
+                            order_pnl = '{:0.8f}'.format(self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0]['closed_pnl'])
                             balance = self.bot.data.available_balance()
-                            print(f"Order was executed! Position size: {position_size}, PNL: {order_pnl}, DEPOSIT: {balance}")
-                            logger.info(f"Order was executed! Position size: {position_size}, PNL: {order_pnl}, DEPOSIT: {balance}")
+                            print(f"Order was executed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                            logger.info(f"Order was executed! PNL: {order_pnl}, DEPOSIT: {balance}")
                             self.update_order_list()
 
             # Manual

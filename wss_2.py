@@ -2,8 +2,14 @@ import json
 import logging
 import time
 from datetime import datetime
-
+from pybit.inverse_perpetual import HTTP
 import websocket
+
+api_key_test = 'ZWt6V7T3CP5PuyafJr'
+api_secret_test = 'urqEwSLZLiXPR0KlNWx2RoX75CCZM5PxgAV0'
+
+session = HTTP("https://api-testnet.bybit.com", api_key=api_key_test,
+                    api_secret=api_secret_test)
 
 logging.basicConfig(filename='logfile_wrapper.log', level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s %(message)s')
@@ -69,20 +75,9 @@ def connWS():
     )
 
 
-def test_func():
-    x = True
-    while True:
-        try:
-            print(2/x)
-            print('ok!')
-            break
-        except Exception as e:
-            print(e)
-            time.sleep(1)
-            x = 5
-
-
 if __name__ == "__main__":
     # websocket.enableTrace(True)
     # connWS()
-    test_func()
+    order_pnl = '{:0.8f}'.format(session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0]['closed_pnl'])
+
+    print(f"Order was executed! PNL: {order_pnl}")
