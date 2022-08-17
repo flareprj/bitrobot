@@ -69,9 +69,20 @@ def connWS():
     )
 
 
+def test_func():
+    x = True
+    while True:
+        try:
+            print(2/x)
+            print('ok!')
+            break
+        except Exception as e:
+            print(e)
+            time.sleep(1)
+            x = 5
+
+
 if __name__ == "__main__":
     # websocket.enableTrace(True)
     # connWS()
-    result = 0.000000244
-    result = '{0:.10f}'.format(result)
-    print(f'{result}')
+    test_func()

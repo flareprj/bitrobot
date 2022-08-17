@@ -20,21 +20,21 @@ class Strategy:
         self.app = app
 
     def cancel_orders(self):
-        try:
-            result = self.client.Order.Order_cancelAll(symbol=self.symbol).result()
-        except Exception as e:
-            print(e)
-            logger.exception(f"{e}", exc_info=True)
-        else:
-            result_code = result[0]['ret_code']
-            if result_code == 0:
-                print('\nAll orders cancelled successfully!')
-                logger.info('All orders cancelled successfully!')
-                return 'All orders cancelled successfully!'
-            else:
-                print(f"Error with code: {result_code}!")
-                logger.error(f"Error with code: {result_code}!")
-                return f"Error with code: {result_code}!"
+        while True:
+            try:
+                result = self.client.Order.Order_cancelAll(symbol=self.symbol).result()
+                result_code = result[0]['ret_code']
+                if result_code == 0:
+                    print('\nAll orders cancelled successfully!')
+                    logger.info('All orders cancelled successfully!')
+                    break
+                else:
+                    print(f"Error with code: {result_code}!")
+                    logger.error(f"Error with code: {result_code}!")
+            except Exception as e:
+                print(e)
+                logger.exception(f"{e}", exc_info=True)
+                sleep_()
 
     def show_order_status(self):
         try:

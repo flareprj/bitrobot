@@ -781,7 +781,6 @@ class MainWindow(QMainWindow):
                     logger.info('The candle closes positive, so we continue trading..')
                     return 0
 
-
     def update_redraw(self):
         self.cancel()
         print('update levels..')
@@ -1051,10 +1050,9 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def cancel(self):
-        res = self.bot.cancel_orders()
+        self.bot.cancel_orders()
         if not self.ui.checkAuto.isChecked():
             self.update_scrollbar()
-        return res
 
     def cancel_orders_list(self, side_, buy_list, sell_list):
         print(self.is_orders)
