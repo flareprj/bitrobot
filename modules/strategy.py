@@ -53,7 +53,7 @@ class Strategy:
             result = self.client.Positions.Positions_myPosition(symbol=self.symbol).result()[0]['result'][
                 'unrealised_pnl']
             if result == 0:
-                return result
+                return str(result)
             elif result is not None:
                 result = '{:0.8f}'.format(result)
                 return result

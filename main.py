@@ -621,6 +621,7 @@ class MainWindow(QMainWindow):
                         self.cancel_orders_list(side, self.buy_list, self.sell_list)
                         logger.info(f"cancel_orders_list: {side}, {self.buy_list}, {self.sell_list}")
 
+                        distance = None
                         if side == "Buy":
                             distance = int(entry_price + ((take_profit - entry_price) / 2))
                         elif side == "Sell":
@@ -636,7 +637,6 @@ class MainWindow(QMainWindow):
                                 pnl = self.bot.get_live_pnl()
 
                                 print(f"PNL: {pnl}, size: {position_size}, active_orders: {count_active_orders}")
-                                #logger.info(f"PNL: {live_pnl}, size: {position_size}, active_orders: {count_active_orders}")
 
                                 if count_active_orders == 0 and float(pnl) < 0:
                                     code = self.filter_timer(1, 1, entry_price, side, position_size)
@@ -681,8 +681,10 @@ class MainWindow(QMainWindow):
                             except Exception as e:
                                 print(e)
                         else:
-                            print(f"Order was executed! Position size: {position_size}")
-                            logger.info(f"Order was executed! Position size: {position_size}")
+                            order_pnl = round(float(self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0]['closed_pnl']), 8)
+                            balance = self.bot.data.available_balance()
+                            print(f"Order was executed! Position size: {position_size}, PNL: {order_pnl}, DEPOSIT: {balance}")
+                            logger.info(f"Order was executed! Position size: {position_size}, PNL: {order_pnl}, DEPOSIT: {balance}")
                             self.update_order_list()
 
             # Manual
@@ -690,7 +692,7 @@ class MainWindow(QMainWindow):
                 self.ui.createButton.setEnabled(True)
                 self.ui.cancelButton.setEnabled(True)
                 live_price = self.bot.get_live_price() + '$'
-                live_pnl = str(self.bot.get_live_pnl()) + ' BTC'
+                live_pnl = self.bot.get_live_pnl()
                 self.ui.label_12.setText(live_price)
                 self.ui.label_15.setText(live_pnl)
                 sleep(1)
