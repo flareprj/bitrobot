@@ -1,6 +1,7 @@
 import http.client
 import sys
 import keyboard
+import telebot
 
 from pybit.inverse_perpetual import HTTP
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -41,6 +42,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
+        self.user_id = None
+        self.bot_token = None
         self.sell_list = None
         self.buy_list = None
         self.is_orders = None
@@ -95,6 +98,7 @@ class MainWindow(QMainWindow):
 
         self.is_alive = False
         self.settings = QSettings('Flareprj', 'BitRobot')
+        self.telegr_check()
         self.load_settings()
         self.thread_manager = QThreadPool()
 
@@ -104,6 +108,7 @@ class MainWindow(QMainWindow):
         self.ui.cancelButton.clicked.connect(self.cancel)
         self.ui.resetButton.clicked.connect(self.reset)
         self.ui.checkAuto.clicked.connect(self.disable_areas)
+        self.ui.telegram.clicked.connect(self.telegr_check)
 
         self.ui.actionExit.triggered.connect(lambda: QApplication.quit())
         self.ui.actionAbout.triggered.connect(self.about)
@@ -113,6 +118,9 @@ class MainWindow(QMainWindow):
             self.ui.api_key.setText(self.settings.value("api_key"))
         if self.settings.contains("api_secret"):
             self.ui.api_secret.setText(self.settings.value("api_secret"))
+        if self.settings.contains("telegram"):
+            self.ui.bot_token.setText(self.settings.value("bot_token"))
+            self.ui.user_id_value.setText(self.settings.value("user_id_value"))
         if self.settings.contains("lineEdit_3"):
             self.ui.lineEdit_3.setText(self.settings.value("lineEdit_3"))
         if self.settings.contains("lineEdit_4"):
@@ -140,6 +148,8 @@ class MainWindow(QMainWindow):
             self.ui.test_rb.setChecked(self.settings.value("test_rb", False, bool))
         if self.settings.contains("main_rb"):
             self.ui.main_rb.setChecked(self.settings.value("main_rb", True, bool))
+        if self.settings.contains("telegram"):
+            self.ui.telegram.setChecked(self.settings.value("telegram", True, bool))
         if self.settings.contains("checkAuto"):
             self.ui.checkAuto.setChecked(self.settings.value("checkAuto", True, bool))
         if self.settings.contains("multorders"):
@@ -148,6 +158,8 @@ class MainWindow(QMainWindow):
     def save_settings(self):
         self.settings.setValue("api_key", self.ui.api_key.text())
         self.settings.setValue("api_secret", self.ui.api_secret.text())
+        self.settings.setValue("bot_token", self.ui.bot_token.text())
+        self.settings.setValue("user_id_value", self.ui.user_id_value.text())
         self.settings.setValue("lineEdit_3", self.ui.lineEdit_3.text())
         self.settings.setValue("lineEdit_4", self.ui.lineEdit_4.text())
         self.settings.setValue("lineEdit_5", self.ui.lineEdit_5.text())
@@ -163,6 +175,7 @@ class MainWindow(QMainWindow):
         self.settings.setValue("test_rb", self.ui.test_rb.isChecked())
         self.settings.setValue("main_rb", self.ui.main_rb.isChecked())
         self.settings.setValue("checkAuto", self.ui.checkAuto.isChecked())
+        self.settings.setValue("telegram", self.ui.telegram.isChecked())
         self.settings.setValue("multorders", self.ui.checkAuto.isChecked())
 
     def closeEvent(self, event) -> None:
@@ -212,6 +225,15 @@ class MainWindow(QMainWindow):
             self.ui.w5.setText('0')
 
     @pyqtSlot()
+    def telegr_check(self):
+        if not self.ui.telegram.isChecked():
+            self.ui.bot_token.setEnabled(False)
+            self.ui.user_id_value.setEnabled(False)
+        else:
+            self.ui.bot_token.setEnabled(True)
+            self.ui.user_id_value.setEnabled(True)
+
+    @pyqtSlot()
     def get_data_init(self):
         self.api_key = self.ui.api_key.text()
         self.api_secret = self.ui.api_secret.text()
@@ -224,6 +246,10 @@ class MainWindow(QMainWindow):
             self.radio = True
         else:
             self.radio = False
+
+        if self.ui.telegram.isChecked():
+            self.bot_token = self.ui.bot_token.text()
+            self.user_id = int(self.ui.user_id_value.text())
 
         list_tf_main = ['1', '3', '5', '15', '30', '60', '120', '240', '360', '720', 'D', 'W', 'M']
         list_tf_test = ['D', 'W', 'M']
@@ -276,8 +302,11 @@ class MainWindow(QMainWindow):
               f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}, time:{datetime.now()}")
         logger.info(f"Start..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
               f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}")
+        if self.ui.telegram.isChecked():
+            self.telegram_bot(f"Start..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
+              f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}, time:{datetime.now()}")
 
-        self.ui.textBrowser.append('connecting..')
+        self.ui.textBrowser.append('Connecting..')
         self.bot = Strategy(self.radio, "BTCUSD", self.api_key, self.api_secret, MainWindow)
 
         if self.radio:
@@ -287,7 +316,7 @@ class MainWindow(QMainWindow):
             self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
                                 api_secret=self.api_secret)
 
-        self.ui.textBrowser.append(f"get available balance..")
+        self.ui.textBrowser.append(f"Get available balance..")
         self.balance = self.bot.data.available_balance()
         self.leverage = int(self.ui.lineEdit_5.text())
 
@@ -296,7 +325,9 @@ class MainWindow(QMainWindow):
             return
 
         if self.balance is not None and self.balance > 0:
-            self.ui.textBrowser.append('balance: ' + str(self.balance) + ' BTC')
+            self.ui.textBrowser.append('Balance: ' + str(self.balance) + ' BTC')
+            if self.ui.telegram.isChecked():
+                self.telegram_bot('Balance: ' + str(self.balance) + ' BTC')
             self.interval = self.ui.lineEdit_3.text()
             self.limit = int(self.ui.lineEdit_4.text())
             self.percents = round(float(self.ui.lineEdit_6.text()), 2)
@@ -572,6 +603,8 @@ class MainWindow(QMainWindow):
                 self.sl_change = False
 
                 position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
+                if position_size == 0 and self.ui.telegram.isChecked():
+                    self.telegram_bot(f"Waiting for conditions to enter the position..")
 
                 while position_size == 0:
                     position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
@@ -601,6 +634,8 @@ class MainWindow(QMainWindow):
                         if not self.is_alive:
                             print(f"Stop receiving the data, time:{datetime.now()}")
                             logger.info(f"Stop receiving the data")
+                            if self.ui.telegram.isChecked():
+                                self.telegram_bot(f"Stop receiving the data, time:{datetime.now()}")
                             break
                 else:
                     try:
@@ -609,14 +644,17 @@ class MainWindow(QMainWindow):
                         print(e)
                     else:
                         take_profit = float(req_pos['take_profit'])
-                        entry_price = float(req_pos['entry_price'])
+                        entry_price = round(float(req_pos['entry_price']), 1)
                         side = req_pos['side']
 
                         print(f"take_profit: {take_profit}")
                         print(f"entry_price: {entry_price}")
                         print(f"side: {side}")
-                        logger.info(
-                            f"take_profit:{take_profit}, entry_price:{entry_price}, side:{side}")
+                        logger.info(f"take_profit:{take_profit}, entry_price:{entry_price}$, side:{side}")
+
+                        if self.ui.telegram.isChecked():
+                            self.telegram_bot(f"The order {side} is open! price: {entry_price}$, tp: {take_profit}$")
+
                         print(side, self.buy_list, self.sell_list)
                         self.cancel_orders_list(side, self.buy_list, self.sell_list)
                         logger.info(f"cancel_orders_list: {side}, {self.buy_list}, {self.sell_list}")
@@ -641,6 +679,15 @@ class MainWindow(QMainWindow):
                                 if count_active_orders == 0 and float(pnl) < 0:
                                     code = self.filter_timer(1, 1, entry_price, side, position_size)
                                     if code == 1:
+                                        order_pnl = '{:0.8f}'.format(
+                                            self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0][
+                                                'closed_pnl'])
+                                        balance = self.bot.data.available_balance()
+                                        print(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                        logger.info(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                        self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                        if self.ui.telegram.isChecked():
+                                            self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
                                         self.update_order_list()
                                         break
 
@@ -659,6 +706,8 @@ class MainWindow(QMainWindow):
                                             print(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                             logger.info(
                                                 f'SL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                            if self.ui.telegram.isChecked():
+                                                self.telegram_bot(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                             self.sl_change = True
                                     except Exception as e:
                                         print(e)
@@ -673,6 +722,8 @@ class MainWindow(QMainWindow):
                                             print(f'\nSL has been replaced! New price: {res["result"]["stop_loss"]}$')
                                             logger.info(
                                                 f'SL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                            if self.ui.telegram.isChecked():
+                                                self.telegram_bot(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                             self.sl_change = True
                                     except Exception as e:
                                         print(e)
@@ -683,8 +734,11 @@ class MainWindow(QMainWindow):
                         else:
                             order_pnl = '{:0.8f}'.format(self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0]['closed_pnl'])
                             balance = self.bot.data.available_balance()
-                            print(f"Order was executed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                            logger.info(f"Order was executed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                            print(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                            logger.info(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                            self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                            if self.ui.telegram.isChecked():
+                                self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
                             self.update_order_list()
 
             # Manual
@@ -701,6 +755,8 @@ class MainWindow(QMainWindow):
     def stop_process(self, check_levels=0):
         if self.is_alive:
             self.status = self.bot.show_order_status()
+            position = self.session.my_position(symbol="BTCUSD")['result']
+            position_size = position['size']
 
             if check_levels == 1:
                 self.ui.textBrowser.append(f'finding new levels..')
@@ -712,18 +768,27 @@ class MainWindow(QMainWindow):
                         self.get_data()
                         break
 
-            if self.status == "Untriggered" or self.status == "New":
+            if self.status == "Untriggered" or self.status == "New" or position_size == 0:
                 self.cancel()
                 self.is_alive = False
                 self.ui.textBrowser.append(f"Stop receiving the data, time:{datetime.now()}")
                 print(f"Stop receiving the data, time:{datetime.now()}")
                 logger.info(f"Stop receiving the data")
+                if self.ui.telegram.isChecked():
+                    self.telegram_bot(f"Stop receiving the data, time:{datetime.now()}")
                 self.update_scrollbar()
                 self.ui.startButton.setEnabled(True)
                 return
             if not self.ui.startButton.isEnabled():
                 self.ui.startButton.setEnabled(True)
                 return
+
+    def telegram_bot(self, msg):
+        try:
+            bot = telebot.TeleBot(self.bot_token)
+            bot.send_message(self.user_id, msg)
+        except Exception as err:
+            print(f'{err}')
 
     def create_market(self, side, qty):
         self.session.place_active_order(
@@ -759,8 +824,8 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     print(f'timer timeout:{time_now_int}, {e}')
             else:
-                print('Candle was closed!')
-                logger.info('Candle was closed!')
+                print('Candle is close!')
+                logger.info('Candle is close!')
                 last_price = round(float(self.session.latest_information_for_symbol(
                     symbol="BTCUSD"
                 )['result'][0]['last_price']), 2)
@@ -768,17 +833,17 @@ class MainWindow(QMainWindow):
 
                 if side == 'Buy' and last_price < entry_price:
                     self.create_market(side='Sell', qty=position_size)
-                    print(f'Order {side} was closed!')
-                    logger.info(f'Order {side} was closed!')
+                    print(f'The order {side} closed!')
+                    logger.info(f'The order {side} closed!')
                     return 1
                 elif side == 'Sell' and last_price > entry_price:
                     self.create_market(side='Buy', qty=position_size)
-                    print(f'Order {side} was closed!')
-                    logger.info(f'Order {side} was closed!')
+                    print(f'Order {side} is close!')
+                    logger.info(f'Order {side} is close!')
                     return 1
                 else:
-                    print('The candle closes positive, so we continue trading..')
-                    logger.info('The candle closes positive, so we continue trading..')
+                    print('The candle was closed positive, so we will continue trading..')
+                    logger.info('The was candle closed positive, so we will continue trading..')
                     return 0
 
     def update_redraw(self):

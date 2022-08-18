@@ -184,7 +184,7 @@ class Endpoints:
     @exx
     def available_balance(self):
         if self.client.Wallet.Wallet_getBalance(coin="BTC").result()[0]['ret_msg'] == 'OK':
-            return self.client.Wallet.Wallet_getBalance(coin="BTC").result()[0]['result']['BTC']['available_balance']
+            return self.client.Wallet.Wallet_getBalance(coin="BTC").result()[0]['result']['BTC']['wallet_balance']
         else:
             return 'error! ret_code:' + str(self.client.Wallet.Wallet_getBalance(coin="BTC").result()[0]['ret_code'])
 
