@@ -760,6 +760,7 @@ class MainWindow(QMainWindow):
 
             if check_levels == 1:
                 self.ui.textBrowser.append(f'finding new levels..')
+                print('finding new levels..')
                 list_tf = ['1', '3', '5', '15', '30', '60', '120', '240', '360', '720', 'D', 'W', 'M']
                 current_tf = self.ui.lineEdit_3.text()
                 for i, tf in enumerate(list_tf, start=0):
@@ -768,7 +769,7 @@ class MainWindow(QMainWindow):
                         self.get_data()
                         break
 
-            if self.status == "Untriggered" or self.status == "New" or position_size == 0:
+            if self.status == "New" or position_size == 0:
                 self.cancel()
                 self.is_alive = False
                 self.ui.textBrowser.append(f"Stop receiving the data, time:{datetime.now()}")
