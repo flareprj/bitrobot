@@ -222,17 +222,18 @@ class Strategy:
 
         logger.info(f'Start creating orders with: {arr_l}$, {_zone_150}, {_zone_100}, {_zone_75}, {_zone_50}, {_zone_25}, {zone_150}, {zone_100}, {zone_75}, {zone_50}, {zone_25}, {price}, {POC}')
         delta = 33
-        filter_for_enter_to_order = 50
+        filter_for_enter_to_order = 75
         check_levels = 0
         if check_levels == 0:
             if price - filter_for_enter_to_order > _zone_25 + delta and price + filter_for_enter_to_order < zone_25 - delta:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25 + delta, tp=POC, sl=0)
                 buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25, tp=POC, sl=0)
-                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_25 - 2*delta, tp=POC, sl=(_zone_25 - 2*delta)-round((_zone_25-_zone_50)/2, 2))
+                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_25 - 2*delta, tp=POC, sl=(_zone_25 - 2*delta)-round((_zone_25-_zone_50)/2, 2))
 
                 prev_buy_list = [buy_1, buy_2, buy_3]
                 buy_list = [n for n in prev_buy_list if not isinstance(prev_buy_list, bool)]
                 if len(buy_list) != 3:
+                    self.cancel_orders()
                     check_levels = 1
                     return None, None, check_levels
                 else:
@@ -241,11 +242,12 @@ class Strategy:
 
                     sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25-delta, tp=POC, sl=0)
                     sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25, tp=POC, sl=0)
-                    sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_25+2*delta, tp=POC, sl=(zone_25+2*delta)+round((zone_50-zone_25)/2, 2))
+                    sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_25+2*delta, tp=POC, sl=(zone_25+2*delta)+round((zone_50-zone_25)/2, 2))
 
                     prev_sell_list = [sell_1, sell_2, sell_3]
                     sell_list = [n for n in prev_sell_list if not isinstance(prev_sell_list, bool)]
                     if len(sell_list) != 3:
+                        self.cancel_orders()
                         check_levels = 1
                         return None, None, check_levels
                     else:
@@ -257,11 +259,12 @@ class Strategy:
             elif price - filter_for_enter_to_order > _zone_50 + delta and price + filter_for_enter_to_order < zone_50 - delta:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_50 + delta, tp=_zone_25+delta, sl=0)
                 buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_50, tp=_zone_25+delta, sl=0)
-                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_50 - 2*delta, tp=_zone_25+delta, sl=(_zone_50 - 2 * delta)-round((_zone_50-_zone_75)/2, 2))
+                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_50 - 2*delta, tp=_zone_25+delta, sl=(_zone_50 - 2 * delta)-round((_zone_50-_zone_75)/2, 2))
 
                 prev_buy_list = [buy_1, buy_2, buy_3]
                 buy_list = [n for n in prev_buy_list if not isinstance(prev_buy_list, bool)]
                 if len(buy_list) != 3:
+                    self.cancel_orders()
                     check_levels = 1
                     return None, None, check_levels
                 else:
@@ -270,11 +273,12 @@ class Strategy:
 
                     sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_50-delta, tp=zone_25-delta, sl=0)
                     sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_50, tp=zone_25-delta, sl=0)
-                    sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_50+2*delta, tp=zone_25-delta, sl=(zone_50+2*delta)+round((zone_75-zone_50)/2, 2))
+                    sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_50+2*delta, tp=zone_25-delta, sl=(zone_50+2*delta)+round((zone_75-zone_50)/2, 2))
 
                     prev_sell_list = [sell_1, sell_2, sell_3]
                     sell_list = [n for n in prev_sell_list if not isinstance(prev_sell_list, bool)]
                     if len(sell_list) != 3:
+                        self.cancel_orders()
                         check_levels = 1
                         return None, None, check_levels
                     else:
@@ -286,11 +290,12 @@ class Strategy:
             elif price - filter_for_enter_to_order > _zone_75 + delta and price + filter_for_enter_to_order < zone_75 - delta:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_75 + delta, tp=_zone_50+delta, sl=0)
                 buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_75, tp=_zone_50+delta, sl=0)
-                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_75 - 2*delta, tp=_zone_50+delta, sl=(_zone_75 - 2 * delta)-round((_zone_50-_zone_75)/2, 2))
+                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_75 - 2*delta, tp=_zone_50+delta, sl=(_zone_75 - 2 * delta)-round((_zone_50-_zone_75)/2, 2))
 
                 prev_buy_list = [buy_1, buy_2, buy_3]
                 buy_list = [n for n in prev_buy_list if not isinstance(prev_buy_list, bool)]
                 if len(buy_list) != 3:
+                    self.cancel_orders()
                     check_levels = 1
                     return None, None, check_levels
                 else:
@@ -299,11 +304,12 @@ class Strategy:
 
                     sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_75-delta, tp=zone_50-delta, sl=0)
                     sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_75, tp=zone_50-delta, sl=0)
-                    sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_75+2*delta, tp=zone_50-delta, sl=(zone_75+2*delta)+round((zone_100-zone_75)/2, 2))
+                    sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_75+2*delta, tp=zone_50-delta, sl=(zone_75+2*delta)+round((zone_100-zone_75)/2, 2))
 
                     prev_sell_list = [sell_1, sell_2, sell_3]
                     sell_list = [n for n in prev_sell_list if not isinstance(prev_sell_list, bool)]
                     if len(sell_list) != 3:
+                        self.cancel_orders()
                         check_levels = 1
                         return None, None, check_levels
                     else:
@@ -315,11 +321,12 @@ class Strategy:
             elif price - filter_for_enter_to_order > _zone_100 + delta and price + filter_for_enter_to_order < zone_100 - delta:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_100 + delta, tp=_zone_75+delta, sl=0)
                 buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_100, tp=_zone_75+delta, sl=0)
-                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_100 - 2*delta, tp=_zone_75+delta, sl=(_zone_100 - 2 * delta)-round((_zone_100-_zone_150)/2, 2))
+                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_100 - 2*delta, tp=_zone_75+delta, sl=(_zone_100 - 2 * delta)-round((_zone_100-_zone_150)/2, 2))
 
                 prev_buy_list = [buy_1, buy_2, buy_3]
                 buy_list = [n for n in prev_buy_list if not isinstance(prev_buy_list, bool)]
                 if len(buy_list) != 3:
+                    self.cancel_orders()
                     check_levels = 1
                     return None, None, check_levels
                 else:
@@ -328,11 +335,12 @@ class Strategy:
 
                     sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_100-delta, tp=zone_75-delta, sl=0)
                     sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_100, tp=zone_75-delta, sl=0)
-                    sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_100+2*delta, tp=zone_75-delta, sl=(zone_100+2*delta)+round((zone_150-zone_100)/2, 2))
+                    sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_100+2*delta, tp=zone_75-delta, sl=(zone_100+2*delta)+round((zone_150-zone_100)/2, 2))
 
                     prev_sell_list = [sell_1, sell_2, sell_3]
                     sell_list = [n for n in prev_sell_list if not isinstance(prev_sell_list, bool)]
                     if len(sell_list) != 3:
+                        self.cancel_orders()
                         check_levels = 1
                         return None, None, check_levels
                     else:
@@ -344,11 +352,12 @@ class Strategy:
             elif price - filter_for_enter_to_order > _zone_150 + delta and price + filter_for_enter_to_order < zone_150 - delta:
                 buy_1 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_150 + delta, tp=_zone_100+delta, sl=0)
                 buy_2 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_150, tp=_zone_100+delta, sl=0)
-                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=2*arr_l, price=_zone_150 - 2*delta, tp=_zone_100+delta, sl=(_zone_150 - 2 * delta)-round((_zone_100-_zone_150)/2, 2))
+                buy_3 = self.data.create_limit_order("Buy", self.symbol, quantity=arr_l, price=_zone_150 - 2*delta, tp=_zone_100+delta, sl=(_zone_150 - 2 * delta)-round((_zone_100-_zone_150)/2, 2))
 
                 prev_buy_list = [buy_1, buy_2, buy_3]
                 buy_list = [n for n in prev_buy_list if not isinstance(prev_buy_list, bool)]
                 if len(buy_list) != 3:
+                    self.cancel_orders()
                     check_levels = 1
                     return None, None, check_levels
                 else:
@@ -357,11 +366,12 @@ class Strategy:
 
                     sell_1 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150-delta, tp=zone_100-delta, sl=0)
                     sell_2 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150, tp=zone_100-delta, sl=0)
-                    sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=2*arr_l, price=zone_150+2*delta, tp=zone_100-delta, sl=(zone_150+2*delta)+round((zone_150-zone_100)/2, 2))
+                    sell_3 = self.data.create_limit_order("Sell", self.symbol, quantity=arr_l, price=zone_150+2*delta, tp=zone_100-delta, sl=(zone_150+2*delta)+round((zone_150-zone_100)/2, 2))
 
                     prev_sell_list = [sell_1, sell_2, sell_3]
                     sell_list = [n for n in prev_sell_list if not isinstance(prev_sell_list, bool)]
                     if len(sell_list) != 3:
+                        self.cancel_orders()
                         check_levels = 1
                         return None, None, check_levels
                     else:

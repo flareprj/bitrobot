@@ -311,10 +311,10 @@ class MainWindow(QMainWindow):
 
         if self.radio:
             self.session = HTTP("https://api-testnet.bybit.com", api_key=self.api_key,
-                                api_secret=self.api_secret)
+                                api_secret=self.api_secret, request_timeout=15, force_retry=True)
         else:
             self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
-                                api_secret=self.api_secret)
+                                api_secret=self.api_secret, request_timeout=15, force_retry=True)
 
         self.ui.textBrowser.append(f"Get available balance..")
         self.balance = self.bot.data.available_balance()
@@ -843,8 +843,8 @@ class MainWindow(QMainWindow):
                     logger.info(f'Order {side} is close!')
                     return 1
                 else:
-                    print('The candle was closed positive, so we will continue trading..')
-                    logger.info('The was candle closed positive, so we will continue trading..')
+                    print("The candle was closed positive, so we'll continue trading..")
+                    logger.info("The candle was closed positive, so we'll continue trading..")
                     return 0
 
     def update_redraw(self):
