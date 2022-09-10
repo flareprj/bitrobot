@@ -7,6 +7,7 @@ from pybit.inverse_perpetual import HTTP
 from unittest import TestCase
 from modules.strategy import *
 import pandas as pd
+import talib
 
 
 class UpdateOrders(TestCase):
@@ -263,33 +264,37 @@ class WhileLoop(TestCase):
         self.api_secret = 'eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa'
         self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
                             api_secret=self.api_secret)
+        self.bot = Strategy(test=False, symbol="BTCUSD", api_key=self.api_key,
+                            api_secret=self.api_secret, app=None)
 
-    def test_New(self):
-            # df = pd.DataFrame({
-            #     'length': [1.5, 0.5, 1.2, 0.9, 3],
-            #     'width': [0.7, 0.2, 0.15, 0.2, 1.1]
-            # }, index=['pig', 'rabbit', 'duck', 'chicken', 'horse'])
-            # df.hist(bins=3)
-            # plt.hist(df)
-            # plt.show()
+    def test_calc_ohvl(self, data):
+        arr = []
+        candles_close = []
+        candles_high = []
+        candles_low = []
 
-            try:
-                order_book = self.session.orderbook(symbol="BTCUSD")['result']
+        arr.append(data)
+        if arr is not None:
+            for i in range(0, len(arr[0][0]['result'])):
+                candles_close.append(arr[0][0]['result'][i]['close'])
+                candles_high.append(arr[0][0]['result'][i]['high'])
+                candles_low.append(arr[0][0]['result'][i]['low'])
 
-            except http.client.RemoteDisconnected as e:
-                print(repr(e), e)
-                logger.error(f"RemoteDisconnected, {e}")
-                sleep_()
-            except requests.exceptions.ConnectionError as e:
-                print(repr(e), e)
-                logger.exception(repr(e), e, exc_info=True)
-                sleep_()
-            except Exception as e:
-                print(repr(e), e)
-                logger.exception(repr(e), e, exc_info=True)
-                sleep_()
+            if (candles_close and candles_high and candles_low) is not None:
+                candles_close = np.array(candles_close, dtype='f8')
+                candles_high = np.array(candles_high, dtype='f8')
+                candles_low = np.array(candles_low, dtype='f8')
+                return candles_close, candles_low, candles_high
             else:
-                pprint.pprint(f"{order_book}")
-                print(len(order_book))
+                return None, None, None
+
+    def test_get_kline(self):
+        data = self.bot.get_kline(interval='1', limit=200)
+        candles_high, candles_low, candles_close = self.test_calc_ohvl(data)
+        print(self.test_calc_adx(candles_high, candles_low, candles_close, 14))
+
+    def test_calc_adx(self, candles_high, candles_low, candles_close, period):
+        adx = talib.ADX(candles_high, candles_low, candles_close, timeperiod=period)
+        return round(adx[-1], 2)
 
 
