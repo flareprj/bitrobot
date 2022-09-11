@@ -1,6 +1,7 @@
 import http.client
 import sys
 import keyboard
+import talib
 import telebot
 
 from pybit.inverse_perpetual import HTTP
@@ -705,22 +706,31 @@ class MainWindow(QMainWindow):
 
                                 print(f"PNL: {pnl}, size: {position_size}, active_orders: {count_active_orders}")
 
-                                if count_active_orders == 0 and float(pnl) < 0:
-                                    code = self.filter_timer(1, 1, entry_price, side, position_size)
-                                    if code == 1:
-                                        order_pnl = '{:0.8f}'.format(
-                                            self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0][
-                                                'closed_pnl'])
-                                        balance = self.bot.data.available_balance()
-                                        print(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                                        logger.info(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                                        self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                                        if self.ui.telegram.isChecked():
-                                            self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                                        # Здесь надо ждать консолидацию перед обновлением ордеров
-                                        # *******************************************************
-                                        self.update_order_list()
-                                        break
+                                # if count_active_orders == 0 and float(pnl) < 0:
+                                #     code = self.filter_timer(1, 1, entry_price, side, position_size)
+                                #     if code == 1:
+                                #         order_pnl = '{:0.8f}'.format(
+                                #             self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0][
+                                #                 'closed_pnl'])
+                                #         balance = self.bot.data.available_balance()
+                                #         print(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                #         logger.info(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                #         self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                #         if self.ui.telegram.isChecked():
+                                #             self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                #         # Ждем консолидацию перед обновлением уровней
+                                #         # *******************************************************
+                                #         adx, atr = self.get_kline()
+                                #         print(f"ADX: {adx}, ATR: {atr}")
+                                #         logger.info(f"ADX: {adx}, ATR: {atr}")
+                                #         while adx > 35 or atr > 35:
+                                #             print(f"Waiting consolidation with ADX: {adx}, ATR: {atr}")
+                                #             logger.info(f"Waiting consolidation with ADX: {adx}, ATR: {atr}")
+                                #             sleep(60)
+                                #             adx, atr = self.get_kline()
+                                #         # *******************************************************
+                                #         self.update_order_list()
+                                #         break
 
                                 self.ui.label_12.setText(price)
                                 self.ui.label_15.setText(pnl)
@@ -770,6 +780,17 @@ class MainWindow(QMainWindow):
                             self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
                             if self.ui.telegram.isChecked():
                                 self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                            # Ждем консолидацию перед обновлением уровней
+                            # *******************************************************
+                            adx, atr = self.get_kline()
+                            print(f"ADX: {adx}, ATR: {atr}")
+                            logger.info(f"ADX: {adx}, ATR: {atr}")
+                            while adx > 35 or atr > 35:
+                                print(f"Waiting consolidation with ADX: {adx}, ATR: {atr}")
+                                logger.info(f"Waiting consolidation with ADX: {adx}, ATR: {atr}")
+                                sleep(60)
+                                adx, atr = self.get_kline()
+                            # *******************************************************
                             self.update_order_list()
 
             # Manual
@@ -830,6 +851,38 @@ class MainWindow(QMainWindow):
             qty=qty,
             time_in_force="GoodTillCancel"
         )
+
+    def calc_ohvl(self, data):
+        arr = []
+        candles_close = []
+        candles_high = []
+        candles_low = []
+
+        arr.append(data)
+        if arr is not None:
+            for i in range(0, len(arr[0][0]['result'])):
+                candles_close.append(arr[0][0]['result'][i]['close'])
+                candles_high.append(arr[0][0]['result'][i]['high'])
+                candles_low.append(arr[0][0]['result'][i]['low'])
+
+            if (candles_close and candles_high and candles_low) is not None:
+                candles_close = np.array(candles_close, dtype='f8')
+                candles_high = np.array(candles_high, dtype='f8')
+                candles_low = np.array(candles_low, dtype='f8')
+                return candles_close, candles_low, candles_high
+            else:
+                return None, None, None
+
+    def get_kline(self):
+        data = self.bot.get_kline(interval='1', limit=200)
+        candles_high, candles_low, candles_close = self.calc_ohvl(data)
+        adx, atr = self.calc_indicators(candles_high, candles_low, candles_close, 14)
+        return adx, atr
+
+    def calc_indicators(self, candles_high, candles_low, candles_close, period):
+        adx = talib.ADX(candles_high, candles_low, candles_close, timeperiod=period)
+        atr = talib.ATR(candles_high, candles_low, candles_close, timeperiod=5)
+        return round(adx[-1], 2), round(atr[-1], 2)
 
     def filter_timer(self, timeframe, limit, entry_price, side, position_size):
         try:
