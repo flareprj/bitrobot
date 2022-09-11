@@ -750,6 +750,10 @@ class MainWindow(QMainWindow):
                                             if self.ui.telegram.isChecked():
                                                 self.telegram_bot(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                             self.sl_change = True
+                                            count_active_orders = len(self.session.get_active_order(symbol="BTCUSD", order_status="New")['result']['data'])
+                                            if count_active_orders != 0:
+                                                self.cancel()
+                                                sleep_()
                                     except Exception as e:
                                         print(e)
 
@@ -766,6 +770,10 @@ class MainWindow(QMainWindow):
                                             if self.ui.telegram.isChecked():
                                                 self.telegram_bot(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                             self.sl_change = True
+                                            count_active_orders = len(self.session.get_active_order(symbol="BTCUSD", order_status="New")['result']['data'])
+                                            if count_active_orders != 0:
+                                                self.cancel()
+                                                sleep_()
                                     except Exception as e:
                                         print(e)
 
@@ -785,9 +793,10 @@ class MainWindow(QMainWindow):
                             adx, atr = self.get_kline()
                             print(f"ADX: {adx}, ATR: {atr}")
                             logger.info(f"ADX: {adx}, ATR: {atr}")
-                            while adx > 35 or atr > 35:
-                                print(f"Waiting consolidation with ADX: {adx}, ATR: {atr}")
-                                logger.info(f"Waiting consolidation with ADX: {adx}, ATR: {atr}")
+                            while adx > 35 or atr > 20:
+                                print(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
+                                logger.info(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
+                                self.telegram_bot(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
                                 sleep(60)
                                 adx, atr = self.get_kline()
                             # *******************************************************
