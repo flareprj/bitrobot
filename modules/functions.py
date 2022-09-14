@@ -122,7 +122,7 @@ class Endpoints:
         try:
             order = self.client.Order.Order_new(side=side, symbol=symbol, order_type="Limit",
                                                 qty=str(quantity), price=price, take_profit=tp, stop_loss=sl,
-                                                time_in_force="GoodTillCancel").result()
+                                                time_in_force="PostOnly").result()
         except TypeError as err:
             print(f"create_limit_order - TypeError:{err}")
             logger.exception(f"create_limit_order - TypeError:{err}", exc_info=True)
