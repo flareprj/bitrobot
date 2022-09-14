@@ -927,19 +927,20 @@ class MainWindow(QMainWindow):
                 )['result'][0]['last_price']), 2)
                 print(f'last_price: {last_price}$, entry: {entry_price}$')
 
-                if side == 'Buy' and last_price < entry_price:
+                distance = 50
+                if side == 'Buy' and last_price < entry_price-distance:
                     self.create_market(side='Sell', qty=position_size)
                     print(f'The order {side} closed!')
                     logger.info(f'The order {side} closed!')
                     return 1
-                elif side == 'Sell' and last_price > entry_price:
+                elif side == 'Sell' and last_price > entry_price+distance:
                     self.create_market(side='Buy', qty=position_size)
                     print(f'Order {side} is close!')
                     logger.info(f'Order {side} is close!')
                     return 1
                 else:
-                    print("The candle was closed positive, so we'll continue trading..")
-                    logger.info("The candle was closed positive, so we'll continue trading..")
+                    print("The candle was closed normally, so we'll continue trading..")
+                    logger.info("The candle was closed normally, so we'll continue trading..")
                     return 0
 
     def update_redraw(self):
