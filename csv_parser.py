@@ -27,9 +27,12 @@ def stop_process(check_levels=0):
 if __name__ == '__main__':
     # save_csv(filename='src/BybitClosedPNLInversePerpetual20220801-20220818.csv')
     #stop_process(check_levels=1)
-    x = [198, False, 2]
 
-    buy_list = [n for n in x if not isinstance(n, bool)]
-    if len(buy_list) != 3:
-        print('cancel')
-    print(buy_list)
+    i = 1
+    while i > 3:
+        print(i)
+        i = 1
+        if i == 1:
+            break
+    else:
+        print('break', i)

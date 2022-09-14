@@ -706,31 +706,33 @@ class MainWindow(QMainWindow):
 
                                 print(f"PNL: {pnl}, size: {position_size}, active_orders: {count_active_orders}")
 
-                                # if count_active_orders == 0 and float(pnl) < 0:
-                                #     code = self.filter_timer(1, 1, entry_price, side, position_size)
-                                #     if code == 1:
-                                #         order_pnl = '{:0.8f}'.format(
-                                #             self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0][
-                                #                 'closed_pnl'])
-                                #         balance = self.bot.data.available_balance()
-                                #         print(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                                #         logger.info(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                                #         self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                                #         if self.ui.telegram.isChecked():
-                                #             self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                                #         # Ждем консолидацию перед обновлением уровней
-                                #         # *******************************************************
-                                #         adx, atr = self.get_kline()
-                                #         print(f"ADX: {adx}, ATR: {atr}")
-                                #         logger.info(f"ADX: {adx}, ATR: {atr}")
-                                #         while adx > 35 or atr > 35:
-                                #             print(f"Waiting consolidation with ADX: {adx}, ATR: {atr}")
-                                #             logger.info(f"Waiting consolidation with ADX: {adx}, ATR: {atr}")
-                                #             sleep(60)
-                                #             adx, atr = self.get_kline()
-                                #         # *******************************************************
-                                #         self.update_order_list()
-                                #         break
+                                if count_active_orders == 0 and float(pnl) < 0:
+                                    code = self.filter_timer(1, 1, entry_price, side, position_size)
+                                    if code == 1:
+                                        order_pnl = '{:0.8f}'.format(
+                                            self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0][
+                                                'closed_pnl'])
+                                        balance = self.bot.data.available_balance()
+                                        print(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                        logger.info(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                        self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                        if self.ui.telegram.isChecked():
+                                            self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                        # Ждем консолидацию перед обновлением уровней
+                                        # *******************************************************
+                                        adx, atr = self.get_kline()
+                                        print(f"ADX: {adx}, ATR: {atr}")
+                                        logger.info(f"ADX: {adx}, ATR: {atr}")
+                                        while adx > 35 or atr > 20:
+                                            print(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
+                                            logger.info(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
+                                            self.telegram_bot(
+                                                f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
+                                            sleep(60)
+                                            adx, atr = self.get_kline()
+                                        # *******************************************************
+                                        self.update_order_list()
+                                        break
 
                                 self.ui.label_12.setText(price)
                                 self.ui.label_15.setText(pnl)

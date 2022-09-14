@@ -1,3 +1,5 @@
+import http
+from http.client import RemoteDisconnected
 import bybit
 import warnings
 import pandas as pd
@@ -124,9 +126,14 @@ class Strategy:
                                                                                      'from': time_now_int - 24 * 30 * 60 * 60 * limit},
                                                                                  limit=limit).result(),
                 }[interval](time_now_int, limit)
+            except RemoteDisconnected as e:
+                print(e, 'Sleep..')
+                logger.exception(f"{e}", exc_info=True)
+                sleep_()
             except Exception as e:
                 print(e)
                 logger.exception(f"{e}", exc_info=True)
+
         else:
             print('Incorrect timeframe or limit!')
             logger.error('Incorrect timeframe or limit!')
