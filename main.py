@@ -626,8 +626,14 @@ class MainWindow(QMainWindow):
                             print('\n', e)
                             logger.exception(f'{e}', exc_info=True)
                     else:
-                        print(f'\ntimer finished!')
-                        logger.info(f'timer finished!')
+                        if position_size != 0:
+                            print(f'\nupdate timer was stopped!')
+                            logger.info(f'update timer was stopped!')
+                            self.telegram_bot(f"Update timer was stopped!")
+                        else:
+                            print(f'\nupdate timer expired!')
+                            logger.info(f'update timer expired!')
+                            self.telegram_bot(f"Update timer expired!")
                         if self.is_alive and position_size == 0:
                             print(f'updating order list: {self.is_alive}, {position_size}')
                             logger.info(f'updating order list: {self.is_alive}, {position_size}')
@@ -713,11 +719,11 @@ class MainWindow(QMainWindow):
                                             self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0][
                                                 'closed_pnl'])
                                         balance = self.bot.data.available_balance()
-                                        print(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                                        logger.info(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                                        self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                        print(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
+                                        logger.info(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
+                                        self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
                                         if self.ui.telegram.isChecked():
-                                            self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                            self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
                                         # Ждем консолидацию перед обновлением уровней
                                         # *******************************************************
                                         adx, atr = self.get_kline()
@@ -739,10 +745,13 @@ class MainWindow(QMainWindow):
 
                                 delta_breakeven = 25
 
-                                if side == "Buy" and float(price) > float(trigger_trailing - 50) + delta_breakeven and not self.sl_change:
+                                if side == "Buy" and float(price) > (trigger_trailing - 50) + delta_breakeven and not self.sl_change:
                                     print('Entering move sl BUY range!')
                                     logger.info('Entering move sl BUY range!')
                                     try:
+                                        position = self.session.my_position(symbol="BTCUSD")['result']
+                                        entry_price = round(float(position['entry_price']), 2)
+                                        sleep_()
                                         res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
                                             entry_price + ((trigger_trailing - entry_price) / 2)))
                                         if res['ret_code'] == 0:
@@ -759,10 +768,13 @@ class MainWindow(QMainWindow):
                                     except Exception as e:
                                         print(e)
 
-                                if side == "Sell" and float(price) < float(trigger_trailing + 50) - delta_breakeven and not self.sl_change:
+                                if side == "Sell" and float(price) < (trigger_trailing + 50) - delta_breakeven and not self.sl_change:
                                     print('Entering move sl SELL range!')
                                     logger.info('Entering move sl SELL range!')
                                     try:
+                                        position = self.session.my_position(symbol="BTCUSD")['result']
+                                        entry_price = round(float(position['entry_price']), 2)
+                                        sleep_()
                                         res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
                                             entry_price - ((entry_price - trigger_trailing) / 2)))
                                         if res['ret_code'] == 0:
@@ -785,22 +797,28 @@ class MainWindow(QMainWindow):
                         else:
                             order_pnl = '{:0.8f}'.format(self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0]['closed_pnl'])
                             balance = self.bot.data.available_balance()
-                            print(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                            logger.info(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
-                            self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                            print(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
+                            logger.info(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
+                            self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
                             if self.ui.telegram.isChecked():
-                                self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, DEPOSIT: {balance}")
+                                self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
+                            sleep(5)
                             # Ждем консолидацию перед обновлением уровней
                             # *******************************************************
                             adx, atr = self.get_kline()
                             print(f"ADX: {adx}, ATR: {atr}")
                             logger.info(f"ADX: {adx}, ATR: {atr}")
-                            while adx > 35 or atr > 20:
-                                print(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
-                                logger.info(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
-                                self.telegram_bot(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
-                                sleep(60)
-                                adx, atr = self.get_kline()
+                            if adx > 35 or atr > 20:
+                                position = self.session.my_position(symbol="BTCUSD")['result']
+                                position_size = position['size']
+                                if position_size != 0:
+                                    self.cancel()
+                                while adx > 35 or atr > 20:
+                                    print(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
+                                    logger.info(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
+                                    self.telegram_bot(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
+                                    sleep(60)
+                                    adx, atr = self.get_kline()
                             # *******************************************************
                             self.update_order_list()
 
@@ -941,12 +959,13 @@ class MainWindow(QMainWindow):
                 else:
                     print("The candle was closed normally, so we'll continue trading..")
                     logger.info("The candle was closed normally, so we'll continue trading..")
+                    self.telegram_bot(f"The candle was closed normally, so we'll continue trading..")
                     return 0
 
     def update_redraw(self):
         self.cancel()
-        print('update levels..')
-        logger.info(f'update levels..')
+        print('updating levels..')
+        logger.info(f'updating levels..')
         self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
         self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
         self.arr_l.extend(self.arr_s)
@@ -975,8 +994,8 @@ class MainWindow(QMainWindow):
 
     def update_order_list(self):
         self.cancel()
-        print('update levels..')
-        logger.info(f'update levels..')
+        print('updating levels..')
+        logger.info(f'updating levels..')
         self.arr_l, self.arr_s, self._zone_150, self._zone_100, self._zone_75, self._zone_50, self._zone_25, self.zone_150, self.zone_100, \
         self.zone_75, self.zone_50, self.zone_25, self.price, self.POC = self.draw_2()
         self.arr_l.extend(self.arr_s)
@@ -992,6 +1011,8 @@ class MainWindow(QMainWindow):
             print('Need to find new levels, the search begins..')
             logger.info('Need to find new levels, the search begins..')
             self.stop_process(check_levels=1)
+
+        self.telegram_bot(f"Orders placed successfully!, time:{datetime.now()}")
 
         self.buy_list = buy_list
         self.sell_list = sell_list
