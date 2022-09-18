@@ -1,8 +1,12 @@
 import http.client
+import socket
+import struct
 import sys
 import keyboard
+import pybit
 import talib
 import telebot
+import win32api
 
 from pybit.inverse_perpetual import HTTP
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -301,11 +305,13 @@ class MainWindow(QMainWindow):
         self.ui.textBrowser.append(f"Start.. time:{datetime.now()}")
         print(f"Start..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
               f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}, time:{datetime.now()}")
-        logger.info(f"Start..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
-              f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}")
+        logger.info(
+            f"Start..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
+            f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}")
         if self.ui.telegram.isChecked():
-            self.telegram_bot(f"Start..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
-              f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}, time:{datetime.now()}")
+            self.telegram_bot(
+                f"Start..TF:{self.ui.lineEdit_3.text()}, CS:{self.ui.lineEdit_4.text()}, LE:{self.ui.lineEdit_5.text()}, "
+                f"AA:{self.ui.lineEdit_6.text()}, TS:{self.ui.trailing_stop.text()}, TR:{self.ui.timer.text()}, time:{datetime.now()}")
 
         self.ui.textBrowser.append('Connecting..')
         self.bot = Strategy(self.radio, "BTCUSD", self.api_key, self.api_secret, MainWindow)
@@ -554,21 +560,29 @@ class MainWindow(QMainWindow):
 
                                         delta_breakeven = 25
 
-                                        if side == "Buy" and float(price) > float(trigger_trailing-int(self.ui.trailing_stop.text()))+delta_breakeven and sl_change == 0:
+                                        if side == "Buy" and float(price) > float(trigger_trailing - int(
+                                                self.ui.trailing_stop.text())) + delta_breakeven and sl_change == 0:
                                             try:
-                                                res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(entry_price+((trigger_trailing-entry_price)/2)))
+                                                res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
+                                                    entry_price + ((trigger_trailing - entry_price) / 2)))
                                                 if res['ret_code'] == 0:
-                                                    print(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
-                                                    logger.info(f'SL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                                    print(
+                                                        f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                                    logger.info(
+                                                        f'SL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                                     sl_change = 1
                                             except Exception as e:
                                                 print(e)
-                                        if side == "Sell" and float(price) < float(trigger_trailing+int(self.ui.trailing_stop.text()))-delta_breakeven and sl_change == 0:
+                                        if side == "Sell" and float(price) < float(trigger_trailing + int(
+                                                self.ui.trailing_stop.text())) - delta_breakeven and sl_change == 0:
                                             try:
-                                                res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(entry_price-((entry_price-trigger_trailing)/2)))
+                                                res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
+                                                    entry_price - ((entry_price - trigger_trailing) / 2)))
                                                 if res['ret_code'] == 0:
-                                                    print(f'\nSL has been replaced! New price: {res["result"]["stop_loss"]}$')
-                                                    logger.info(f'SL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                                    print(
+                                                        f'\nSL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                                    logger.info(
+                                                        f'SL has been replaced! New price: {res["result"]["stop_loss"]}$')
                                                     sl_change = 1
                                             except Exception as e:
                                                 print(e)
@@ -602,10 +616,24 @@ class MainWindow(QMainWindow):
             if self.ui.checkAuto.isChecked() and self.ui.multorders.isChecked():
                 self.is_orders = True
                 self.sl_change = False
+                position_size = None
 
-                position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
-                if position_size == 0 and self.ui.telegram.isChecked():
-                    self.telegram_bot(f"Waiting for conditions to enter the position..")
+                while True:
+                    try:
+                        position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
+                    except Exception as e:
+                        print(f'\n{e}!')
+                        logger.exception(f'{e}', exc_info=False)
+                        code = self.check_time()
+                        if code != 0:
+                            sleep_()
+                            continue
+                    else:
+                        if position_size == 0 and self.ui.telegram.isChecked():
+                            self.telegram_bot(f"Waiting for conditions to enter the position..")
+                            break
+                        elif position_size != 0:
+                            self.cancel()
 
                 while position_size == 0:
                     position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
@@ -624,7 +652,11 @@ class MainWindow(QMainWindow):
                             sleep(1)
                         except Exception as e:
                             print('\n', e)
-                            logger.exception(f'{e}', exc_info=True)
+                            logger.exception(f'{e}!', exc_info=False)
+                            code = self.check_time()
+                            if code != 0:
+                                sleep_()
+                                continue
                     else:
                         if position_size != 0:
                             print(f'\nupdate timer was stopped!')
@@ -703,7 +735,9 @@ class MainWindow(QMainWindow):
 
                         while position_size != 0:
                             try:
-                                count_active_orders = len(self.session.get_active_order(symbol="BTCUSD", order_status="New")['result']['data'])
+                                count_active_orders = len(
+                                    self.session.get_active_order(symbol="BTCUSD", order_status="New")['result'][
+                                        'data'])
                                 position = self.session.my_position(symbol="BTCUSD")['result']
                                 position_size = position['size']
                                 entry_price = round(float(position['entry_price']), 2)
@@ -721,9 +755,11 @@ class MainWindow(QMainWindow):
                                         balance = self.bot.data.available_balance()
                                         print(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
                                         logger.info(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
-                                        self.ui.textBrowser.append(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
+                                        self.ui.textBrowser.append(
+                                            f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
                                         if self.ui.telegram.isChecked():
-                                            self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
+                                            self.telegram_bot(
+                                                f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
                                         # Ждем консолидацию перед обновлением уровней
                                         # *******************************************************
                                         adx, atr = self.get_kline()
@@ -745,7 +781,8 @@ class MainWindow(QMainWindow):
 
                                 delta_breakeven = 25
 
-                                if side == "Buy" and float(price) > (trigger_trailing - 50) + delta_breakeven and not self.sl_change:
+                                if side == "Buy" and float(price) > (
+                                        trigger_trailing - 50) + delta_breakeven and not self.sl_change:
                                     print('Entering move sl BUY range!')
                                     logger.info('Entering move sl BUY range!')
                                     try:
@@ -759,16 +796,20 @@ class MainWindow(QMainWindow):
                                             logger.info(
                                                 f'SL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                             if self.ui.telegram.isChecked():
-                                                self.telegram_bot(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                                self.telegram_bot(
+                                                    f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                             self.sl_change = True
-                                            count_active_orders = len(self.session.get_active_order(symbol="BTCUSD", order_status="New")['result']['data'])
+                                            count_active_orders = len(
+                                                self.session.get_active_order(symbol="BTCUSD", order_status="New")[
+                                                    'result']['data'])
                                             if count_active_orders != 0:
                                                 self.cancel()
                                                 sleep_()
                                     except Exception as e:
                                         print(e)
 
-                                if side == "Sell" and float(price) < (trigger_trailing + 50) - delta_breakeven and not self.sl_change:
+                                if side == "Sell" and float(price) < (
+                                        trigger_trailing + 50) - delta_breakeven and not self.sl_change:
                                     print('Entering move sl SELL range!')
                                     logger.info('Entering move sl SELL range!')
                                     try:
@@ -782,9 +823,12 @@ class MainWindow(QMainWindow):
                                             logger.info(
                                                 f'SL has been replaced! New price: {res["result"]["stop_loss"]}$')
                                             if self.ui.telegram.isChecked():
-                                                self.telegram_bot(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                                self.telegram_bot(
+                                                    f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
                                             self.sl_change = True
-                                            count_active_orders = len(self.session.get_active_order(symbol="BTCUSD", order_status="New")['result']['data'])
+                                            count_active_orders = len(
+                                                self.session.get_active_order(symbol="BTCUSD", order_status="New")[
+                                                    'result']['data'])
                                             if count_active_orders != 0:
                                                 self.cancel()
                                                 sleep_()
@@ -795,7 +839,8 @@ class MainWindow(QMainWindow):
                             except Exception as e:
                                 print(e)
                         else:
-                            order_pnl = '{:0.8f}'.format(self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0]['closed_pnl'])
+                            order_pnl = '{:0.8f}'.format(
+                                self.session.closed_profit_and_loss(symbol='BTCUSD')['result']['data'][0]['closed_pnl'])
                             balance = self.bot.data.available_balance()
                             print(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
                             logger.info(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
@@ -946,12 +991,12 @@ class MainWindow(QMainWindow):
                 print(f'last_price: {last_price}$, entry: {entry_price}$')
 
                 distance = 50
-                if side == 'Buy' and last_price < entry_price-distance:
+                if side == 'Buy' and last_price < entry_price - distance:
                     self.create_market(side='Sell', qty=position_size)
                     print(f'The order {side} closed!')
                     logger.info(f'The order {side} closed!')
                     return 1
-                elif side == 'Sell' and last_price > entry_price+distance:
+                elif side == 'Sell' and last_price > entry_price + distance:
                     self.create_market(side='Buy', qty=position_size)
                     print(f'Order {side} is close!')
                     logger.info(f'Order {side} is close!')
@@ -1205,9 +1250,10 @@ class MainWindow(QMainWindow):
                 print('Not enough contracts size to create order! Please increase your deposit size or leverage')
                 logger.info(f'Not enough contracts size to create order! Please increase your deposit size or leverage')
                 return 0
-            return self.bot.create_2_orders(default_margin, self._zone_150, self._zone_100, self._zone_75, self._zone_50,
-                                             self._zone_25, self.zone_150, self.zone_100,
-                                             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
+            return self.bot.create_2_orders(default_margin, self._zone_150, self._zone_100, self._zone_75,
+                                            self._zone_50,
+                                            self._zone_25, self.zone_150, self.zone_100,
+                                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
 
         except Exception as e:
             print(repr(e), e)
@@ -1223,9 +1269,10 @@ class MainWindow(QMainWindow):
                 print('Not enough contracts size to create order! Please increase your deposit size or leverage')
                 logger.info(f'Not enough contracts size to create order! Please increase your deposit size or leverage')
                 return None, None, -1
-            return self.bot.create_6_orders(default_margin, self._zone_150, self._zone_100, self._zone_75, self._zone_50,
-                                             self._zone_25, self.zone_150, self.zone_100,
-                                             self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
+            return self.bot.create_6_orders(default_margin, self._zone_150, self._zone_100, self._zone_75,
+                                            self._zone_50,
+                                            self._zone_25, self.zone_150, self.zone_100,
+                                            self.zone_75, self.zone_50, self.zone_25, self.price, self.POC)
 
         except Exception as e:
             print(repr(e), e)
@@ -1261,6 +1308,51 @@ class MainWindow(QMainWindow):
                     )
                     logger.info(f"{res}")
             self.is_orders = False
+
+    def gettime_ntp(self, addr='time.nist.gov'):
+        # http://code.activestate.com/recipes/117211-simple-very-sntp-client/
+        TIME1970 = 2208988800  # Thanks to F.Lundh
+        client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        data = bytes('\x1b' + 47 * '\0', 'utf-8')
+        try:
+            # Timing out the connection after 5 seconds, if no response received
+            client.settimeout(5.0)
+            client.sendto(data, (addr, 123))
+            data, address = client.recvfrom(1024)
+            if data:
+                epoch_time = struct.unpack('!12I', data)[10]
+                epoch_time -= TIME1970
+                return epoch_time
+        except socket.gaierror:
+            return None
+        except socket.timeout:
+            return None
+
+    def check_time(self):
+        # List of servers in order of attempt of fetching
+        server_list = ['ntp.iitb.ac.in', 'time.nist.gov', 'time.windows.com', 'pool.ntp.org']
+        # Iterates over every server in the list until it finds time from any one.
+        for server in server_list:
+            epoch_time = self.gettime_ntp(server)
+            if epoch_time is not None:
+                # SetSystemTime takes time as argument in UTC time. UTC time is obtained using utcfromtimestamp()
+                utcTime = datetime.utcfromtimestamp(epoch_time)
+                win32api.SetSystemTime(utcTime.year, utcTime.month, utcTime.weekday(), utcTime.day, utcTime.hour,
+                                       utcTime.minute, utcTime.second, 0)
+                # Local time is obtained using fromtimestamp()
+                localTime = datetime.fromtimestamp(epoch_time)
+                print("Time updated to: " + localTime.strftime("%Y-%m-%d %H:%M") + " from " + server)
+                logger.info(f'{"Time updated to: " + localTime.strftime("%Y-%m-%d %H:%M") + " from " + server}',
+                            exc_info=False)
+                self.telegram_bot(f'{"Time updated to: " + localTime.strftime("%Y-%m-%d %H:%M") + " from " + server}')
+                break
+            else:
+                print("Could not find time from " + server)
+                logger.info(f'{"Could not find time from " + server}',
+                            exc_info=False)
+                self.telegram_bot(f'{"Could not find time from " + server}')
+                return -1
+        return 0
 
 
 if __name__ == "__main__":
@@ -1302,4 +1394,3 @@ if __name__ == "__main__":
                     break
             except:
                 break
-
