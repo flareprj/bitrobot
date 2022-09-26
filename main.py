@@ -55,6 +55,7 @@ class MainWindow(QMainWindow):
         self.status = None
         self.timer = None
         self.trailing_stop = None
+        self.breakeven = None
         self.POC = None
         self.price = None
         self.zone_25 = None
@@ -159,6 +160,8 @@ class MainWindow(QMainWindow):
             self.ui.checkAuto.setChecked(self.settings.value("checkAuto", True, bool))
         if self.settings.contains("multorders"):
             self.ui.multorders.setChecked(self.settings.value("multorders", True, bool))
+        if self.settings.contains("breakeven"):
+            self.ui.breakeven.setChecked(self.settings.value("breakeven", False, bool))
 
     def save_settings(self):
         self.settings.setValue("api_key", self.ui.api_key.text())
@@ -182,6 +185,7 @@ class MainWindow(QMainWindow):
         self.settings.setValue("checkAuto", self.ui.checkAuto.isChecked())
         self.settings.setValue("telegram", self.ui.telegram.isChecked())
         self.settings.setValue("multorders", self.ui.checkAuto.isChecked())
+        self.settings.setValue("breakeven", self.ui.checkAuto.isChecked())
 
     def closeEvent(self, event) -> None:
         self.save_settings()
@@ -620,7 +624,9 @@ class MainWindow(QMainWindow):
 
                 while True:
                     try:
-                        position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
+                        req_pos = self.session.my_position(symbol="BTCUSD")['result']
+                        position_size = req_pos['size']
+                        print(f'Getting position size..{position_size}$')
                     except Exception as e:
                         print(f'\n{e}!')
                         logger.exception(f'{e}', exc_info=False)
@@ -633,7 +639,25 @@ class MainWindow(QMainWindow):
                             self.telegram_bot(f"Waiting for conditions to enter the position..")
                             break
                         elif position_size != 0:
-                            self.cancel()
+                            side = req_pos['side']
+                            if side == 'Buy':
+                                self.create_market(side='Sell', qty=position_size)
+                                print(f'The order {side} closed!')
+                                logger.info(f'The order {side} closed!')
+                            elif side == 'Sell':
+                                self.create_market(side='Buy', qty=position_size)
+                                print(f'Order {side} is close!')
+                                logger.info(f'Order {side} is close!')
+                            sleep(5)
+                            req_pos = self.session.my_position(symbol="BTCUSD")['result']
+                            position_size = req_pos['size']
+                            while position_size != 0:
+                                print('Waiting..')
+                                sleep_()
+                            else:
+                                print('Break!')
+                                break
+                        break
 
                 while position_size == 0:
                     position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
@@ -701,13 +725,15 @@ class MainWindow(QMainWindow):
                         if side == "Buy":
                             if take_profit == 0:
                                 take_profit = entry_price + 200
-                            trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
+                            #trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
+                            trigger_trailing = int(entry_price + (take_profit - entry_price))
                             print(f"trigger_trailing: {trigger_trailing}$")
                             logger.info(f"trigger_trailing: {trigger_trailing}$")
                         if side == "Sell":
                             if take_profit == 0:
                                 take_profit = entry_price - 200
-                            trigger_trailing = int(entry_price - ((entry_price - take_profit) / 2))
+                            #trigger_trailing = int(entry_price - ((entry_price - take_profit) / 2))
+                            trigger_trailing = int(entry_price - (entry_price - take_profit))
                             print(f"trigger_trailing: {trigger_trailing}$")
                             logger.info(f"trigger_trailing: {trigger_trailing}$")
 
@@ -779,61 +805,62 @@ class MainWindow(QMainWindow):
                                 self.ui.label_12.setText(price)
                                 self.ui.label_15.setText(pnl)
 
-                                delta_breakeven = 25
+                                if self.ui.breakeven.isChecked():
+                                    delta_breakeven = 25
 
-                                if side == "Buy" and float(price) > (
-                                        trigger_trailing - 50) + delta_breakeven and not self.sl_change:
-                                    print('Entering move sl BUY range!')
-                                    logger.info('Entering move sl BUY range!')
-                                    try:
-                                        position = self.session.my_position(symbol="BTCUSD")['result']
-                                        entry_price = round(float(position['entry_price']), 2)
-                                        sleep_()
-                                        res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
-                                            entry_price + ((trigger_trailing - entry_price) / 2)))
-                                        if res['ret_code'] == 0:
-                                            print(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
-                                            logger.info(
-                                                f'SL has been replaced! New price:{res["result"]["stop_loss"]}$')
-                                            if self.ui.telegram.isChecked():
-                                                self.telegram_bot(
-                                                    f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
-                                            self.sl_change = True
-                                            count_active_orders = len(
-                                                self.session.get_active_order(symbol="BTCUSD", order_status="New")[
-                                                    'result']['data'])
-                                            if count_active_orders != 0:
-                                                self.cancel()
-                                                sleep_()
-                                    except Exception as e:
-                                        print(e)
+                                    if side == "Buy" and float(price) > (
+                                            trigger_trailing - 50) + delta_breakeven and not self.sl_change:
+                                        print('Entering move sl BUY range!')
+                                        logger.info('Entering move sl BUY range!')
+                                        try:
+                                            position = self.session.my_position(symbol="BTCUSD")['result']
+                                            entry_price = round(float(position['entry_price']), 2)
+                                            sleep_()
+                                            res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
+                                                entry_price + ((trigger_trailing - entry_price) / 2)))
+                                            if res['ret_code'] == 0:
+                                                print(f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                                logger.info(
+                                                    f'SL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                                if self.ui.telegram.isChecked():
+                                                    self.telegram_bot(
+                                                        f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                                self.sl_change = True
+                                                count_active_orders = len(
+                                                    self.session.get_active_order(symbol="BTCUSD", order_status="New")[
+                                                        'result']['data'])
+                                                if count_active_orders != 0:
+                                                    self.cancel()
+                                                    sleep_()
+                                        except Exception as e:
+                                            print(e)
 
-                                if side == "Sell" and float(price) < (
-                                        trigger_trailing + 50) - delta_breakeven and not self.sl_change:
-                                    print('Entering move sl SELL range!')
-                                    logger.info('Entering move sl SELL range!')
-                                    try:
-                                        position = self.session.my_position(symbol="BTCUSD")['result']
-                                        entry_price = round(float(position['entry_price']), 2)
-                                        sleep_()
-                                        res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
-                                            entry_price - ((entry_price - trigger_trailing) / 2)))
-                                        if res['ret_code'] == 0:
-                                            print(f'\nSL has been replaced! New price: {res["result"]["stop_loss"]}$')
-                                            logger.info(
-                                                f'SL has been replaced! New price: {res["result"]["stop_loss"]}$')
-                                            if self.ui.telegram.isChecked():
-                                                self.telegram_bot(
-                                                    f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
-                                            self.sl_change = True
-                                            count_active_orders = len(
-                                                self.session.get_active_order(symbol="BTCUSD", order_status="New")[
-                                                    'result']['data'])
-                                            if count_active_orders != 0:
-                                                self.cancel()
-                                                sleep_()
-                                    except Exception as e:
-                                        print(e)
+                                    if side == "Sell" and float(price) < (
+                                            trigger_trailing + 50) - delta_breakeven and not self.sl_change:
+                                        print('Entering move sl SELL range!')
+                                        logger.info('Entering move sl SELL range!')
+                                        try:
+                                            position = self.session.my_position(symbol="BTCUSD")['result']
+                                            entry_price = round(float(position['entry_price']), 2)
+                                            sleep_()
+                                            res = self.session.set_trading_stop(symbol="BTCUSD", stop_loss=int(
+                                                entry_price - ((entry_price - trigger_trailing) / 2)))
+                                            if res['ret_code'] == 0:
+                                                print(f'\nSL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                                logger.info(
+                                                    f'SL has been replaced! New price: {res["result"]["stop_loss"]}$')
+                                                if self.ui.telegram.isChecked():
+                                                    self.telegram_bot(
+                                                        f'\nSL has been replaced! New price:{res["result"]["stop_loss"]}$')
+                                                self.sl_change = True
+                                                count_active_orders = len(
+                                                    self.session.get_active_order(symbol="BTCUSD", order_status="New")[
+                                                        'result']['data'])
+                                                if count_active_orders != 0:
+                                                    self.cancel()
+                                                    sleep_()
+                                        except Exception as e:
+                                            print(e)
 
                                 sleep(3)
                             except Exception as e:
@@ -848,6 +875,7 @@ class MainWindow(QMainWindow):
                             if self.ui.telegram.isChecked():
                                 self.telegram_bot(f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
                             sleep(5)
+                            self.cancel()
                             # Ждем консолидацию перед обновлением уровней
                             # *******************************************************
                             adx, atr = self.get_kline()
