@@ -786,6 +786,42 @@ class MainWindow(QMainWindow):
                                         if self.ui.telegram.isChecked():
                                             self.telegram_bot(
                                                 f"The order {side} closed! PNL: {order_pnl}, BALANCE: {balance}")
+
+                                        while True:
+                                            try:
+                                                req_pos = self.session.my_position(symbol="BTCUSD")['result']
+                                                position_size = req_pos['size']
+                                            except Exception as e:
+                                                print(f'\n{e}!')
+                                                logger.exception(f'{e}', exc_info=False)
+                                                code = self.check_time()
+                                                if code != 0:
+                                                    sleep_()
+                                                    continue
+                                            else:
+                                                if position_size == 0:
+                                                    break
+                                                elif position_size != 0:
+                                                    side = req_pos['side']
+                                                    if side == 'Buy':
+                                                        self.create_market(side='Sell', qty=position_size)
+                                                        print(f'The order {side} closed!')
+                                                        logger.info(f'The order {side} closed!')
+                                                    elif side == 'Sell':
+                                                        self.create_market(side='Buy', qty=position_size)
+                                                        print(f'Order {side} is close!')
+                                                        logger.info(f'Order {side} is close!')
+                                                    sleep(5)
+                                                    req_pos = self.session.my_position(symbol="BTCUSD")['result']
+                                                    position_size = req_pos['size']
+                                                    while position_size != 0:
+                                                        print('Waiting..')
+                                                        sleep_()
+                                                    else:
+                                                        print('Break!')
+                                                        break
+                                                break
+
                                         # Ждем консолидацию перед обновлением уровней
                                         # *******************************************************
                                         adx, atr = self.get_kline()
