@@ -659,7 +659,7 @@ class MainWindow(QMainWindow):
                                 break
                         break
 
-                if position_size == 0:
+                while position_size == 0:
                     elapsed_time = self.timer
                     if not self.is_alive:
                         break
@@ -724,14 +724,12 @@ class MainWindow(QMainWindow):
                         if side == "Buy":
                             if take_profit == 0:
                                 take_profit = entry_price + 200
-                            #trigger_trailing = int(entry_price + ((take_profit - entry_price) / 2))
                             trigger_trailing = int(entry_price + (take_profit - entry_price))
                             print(f"trigger_trailing: {trigger_trailing}$")
                             logger.info(f"trigger_trailing: {trigger_trailing}$")
                         if side == "Sell":
                             if take_profit == 0:
                                 take_profit = entry_price - 200
-                            #trigger_trailing = int(entry_price - ((entry_price - take_profit) / 2))
                             trigger_trailing = int(entry_price - (entry_price - take_profit))
                             print(f"trigger_trailing: {trigger_trailing}$")
                             logger.info(f"trigger_trailing: {trigger_trailing}$")
