@@ -9,7 +9,7 @@ class MegaHandler(logging.Handler):
 
     def emit(self, record):
         message = self.format(record)
-        with open(self.filename, 'a') as file:
+        with open(self.filename, 'a', encoding="utf-8") as file:
             file.write(message + '\n')
 
 
