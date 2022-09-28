@@ -659,8 +659,7 @@ class MainWindow(QMainWindow):
                                 break
                         break
 
-                while position_size == 0:
-                    position_size = self.session.my_position(symbol="BTCUSD")['result']['size']
+                if position_size == 0:
                     elapsed_time = self.timer
                     if not self.is_alive:
                         break
