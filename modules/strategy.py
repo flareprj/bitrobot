@@ -126,14 +126,16 @@ class Strategy:
                                                                                      'from': time_now_int - 24 * 30 * 60 * 60 * limit},
                                                                                  limit=limit).result(),
                 }[interval](time_now_int, limit)
-            except RemoteDisconnected as e:
+            except http.client.RemoteDisconnected as e:
                 print(e, 'Sleep..')
                 logger.exception(f"{e}", exc_info=True)
                 sleep_()
+                self.get_kline(interval='1', limit=200)
             except Exception as e:
-                print(e)
+                print(e, 'Sleep..')
                 logger.exception(f"{e}", exc_info=True)
-
+                sleep_()
+                self.get_kline(interval='1', limit=200)
         else:
             print('Incorrect timeframe or limit!')
             logger.error('Incorrect timeframe or limit!')

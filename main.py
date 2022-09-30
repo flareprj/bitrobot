@@ -824,7 +824,7 @@ class MainWindow(QMainWindow):
                                         adx, atr = self.get_kline()
                                         print(f"ADX: {adx}, ATR: {atr}")
                                         logger.info(f"ADX: {adx}, ATR: {atr}")
-                                        while adx > 35 or atr > 20:
+                                        while adx > 35 or atr > 30:
                                             print(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
                                             logger.info(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
                                             self.telegram_bot(
@@ -914,12 +914,12 @@ class MainWindow(QMainWindow):
                             adx, atr = self.get_kline()
                             print(f"ADX: {adx}, ATR: {atr}")
                             logger.info(f"ADX: {adx}, ATR: {atr}")
-                            if adx > 35 or atr > 20:
+                            if adx > 35 or atr > 30:
                                 position = self.session.my_position(symbol="BTCUSD")['result']
                                 position_size = position['size']
                                 if position_size != 0:
                                     self.cancel()
-                                while adx > 35 or atr > 20:
+                                while adx > 35 or atr > 30:
                                     print(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
                                     logger.info(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
                                     self.telegram_bot(f"Waiting consolidation with ADX(14): {adx}, ATR(5): {atr}")
