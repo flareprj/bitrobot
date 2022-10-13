@@ -7,11 +7,11 @@ from pybit.inverse_perpetual import HTTP
 class LimitOrder(TestCase):
     def setUp(self) -> None:
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
-        self.api_key = '0ufzW85gpidJWYdN7Q'
-        self.api_secret = 'eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa'
+        self.api_key = ''
+        self.api_secret = ''
 
-        self.api_key_test = 'ZWt6V7T3CP5PuyafJr'
-        self.api_secret_test = 'urqEwSLZLiXPR0KlNWx2RoX75CCZM5PxgAV0'
+        self.api_key_test = ''
+        self.api_secret_test = ''
 
         self.bot = Strategy(test=True, symbol="BTCUSD", api_key=self.api_key_test,
                             api_secret=self.api_secret_test, app=None)

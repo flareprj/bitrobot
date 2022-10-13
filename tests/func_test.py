@@ -13,8 +13,8 @@ import talib
 class UpdateOrders(TestCase):
     def setUp(self) -> None:
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
-        self.api_key = '0ufzW85gpidJWYdN7Q'
-        self.api_secret = 'eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa'
+        self.api_key = ''
+        self.api_secret = ''
         self.bot = Strategy(test=False, symbol="BTCUSD", api_key=self.api_key,
                             api_secret=self.api_secret, app=None)
         self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
@@ -190,8 +190,8 @@ class ReplaceStopOrder(TestCase):
 class LimitOrder(TestCase):
     def setUp(self) -> None:
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
-        self.api_key = '0ufzW85gpidJWYdN7Q'
-        self.api_secret = 'eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa'
+        self.api_key = ''
+        self.api_secret = ''
         self.bot = Strategy(test=False, symbol="BTCUSD", api_key='qwgV06Je2in5PICYGW',
                             api_secret='vcflzZbd3PfnXxYD30x8Yj6XJ2l9ndq4bcrP', app=None)
         self.data = Endpoints(client=self.bot.client, symbol=self.bot.symbol)
@@ -260,8 +260,8 @@ class LimitOrder(TestCase):
 class WhileLoop(TestCase):
     def setUp(self) -> None:
         warnings.simplefilter(action='ignore', category=DeprecationWarning)
-        self.api_key = '0ufzW85gpidJWYdN7Q'
-        self.api_secret = 'eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa'
+        self.api_key = ''
+        self.api_secret = ''
         self.session = HTTP("https://api.bybit.com", api_key=self.api_key,
                             api_secret=self.api_secret)
         self.bot = Strategy(test=False, symbol="BTCUSD", api_key=self.api_key,

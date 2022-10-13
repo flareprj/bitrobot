@@ -10,8 +10,8 @@ class GetTime(TestCase):
     def setUp(self) -> None:
         self.radio = True
         self.symbol = 'BTCUSD'
-        self.api_key = 'ZWt6V7T3CP5PuyafJr'
-        self.api_secret = 'urqEwSLZLiXPR0KlNWx2RoX75CCZM5PxgAV0'
+        self.api_key = ''
+        self.api_secret = ''
         if self.radio:
             self.session = HTTP("https://api-testnet.bybit.com", api_key=self.api_key,
                                 api_secret=self.api_secret)

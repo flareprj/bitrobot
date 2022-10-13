@@ -66,8 +66,8 @@ def get_margin_poc(data):
 class GetPoc(TestCase):
     def setUp(self) -> None:
         self.radio = True
-        self.api_key = '0ufzW85gpidJWYdN7Q'
-        self.api_secret = 'eL4uOtCGoUisGxMFwN44lxUDQvwZFkgvniRa'
+        self.api_key = ''
+        self.api_secret = ''
         self.bot = Strategy(self.radio, "BTCUSD", self.api_key, self.api_secret, app=None)
 
     def test_getpoc(self):
